@@ -115,10 +115,14 @@ def parse_images(search_response: bytes) -> list[ObservationImage]:
     return sorted(images, key=lambda image: image.observation_start_modified_julian_date)
 
 
-def group_into_epochs(
+def detector_number(image: ObservationImage) -> int:
+    return int(image.detector_band.rsplit("D", 1)[-1])
+
+
+def split_into_epochs(
     images: list[ObservationImage], gap_days: float = EPOCH_GAP_DAYS
-) -> list[ObservationEpoch]:
-    """Group images into observation epochs separated by more than `gap_days`."""
+) -> list[list[ObservationImage]]:
+    """Split images into observation epochs separated by more than `gap_days`."""
     if not images:
         return []
     images_by_time = sorted(images, key=lambda image: image.observation_start_modified_julian_date)
@@ -131,6 +135,13 @@ def group_into_epochs(
         if days_between > gap_days:
             epochs.append([])
         epochs[-1].append(image)
+    return epochs
+
+
+def group_into_epochs(
+    images: list[ObservationImage], gap_days: float = EPOCH_GAP_DAYS
+) -> list[ObservationEpoch]:
+    """Summarise each observation epoch separated from the next by more than `gap_days`."""
     return [
         ObservationEpoch(
             number=epoch_number,
@@ -141,5 +152,44 @@ def group_into_epochs(
                 sorted(Counter(image.detector_band for image in epoch_images).items())
             ),
         )
-        for epoch_number, epoch_images in enumerate(epochs, start=1)
+        for epoch_number, epoch_images in enumerate(split_into_epochs(images, gap_days), start=1)
     ]
+
+
+@dataclass(frozen=True)
+class ReleaseSearch:
+    images: list[ObservationImage]
+    release_by_mirror_url: dict[str, Collection]
+    unavailable_releases: dict[Collection, str]
+
+
+def search_releases(
+    right_ascension: float, declination: float, radius_degrees: float, timeout_seconds: float
+) -> ReleaseSearch:
+    """Search every release; an observation present in several is kept once, from the first."""
+    images: list[ObservationImage] = []
+    release_by_mirror_url: dict[str, Collection] = {}
+    unavailable_releases: dict[Collection, str] = {}
+    known_observations: set[tuple[str, str]] = set()
+    first_error: ArchiveError | None = None
+    for collection in Collection:
+        url = build_search_url(right_ascension, declination, radius_degrees, collection)
+        try:
+            found_images = parse_images(download_search_response(url, timeout_seconds))
+        except ArchiveError as error:
+            first_error = first_error or error
+            unavailable_releases[collection] = error.message
+            continue
+        for image in found_images:
+            observation = (image.observation_id, image.detector_band)
+            if observation not in known_observations:
+                known_observations.add(observation)
+                images.append(image)
+                release_by_mirror_url[image.mirror_url] = collection
+    if first_error is not None and len(unavailable_releases) == len(Collection):
+        raise first_error
+    return ReleaseSearch(
+        images=sorted(images, key=lambda image: image.observation_start_modified_julian_date),
+        release_by_mirror_url=release_by_mirror_url,
+        unavailable_releases=unavailable_releases,
+    )

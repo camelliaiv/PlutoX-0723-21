@@ -40,6 +40,10 @@ This work made use of Astropy (https://www.astropy.org), a community-developed c
 an ecosystem of tools and resources for astronomy:
 Astropy Collaboration 2013 (2013A&A...558A..33A), 2018 (2018AJ....156..123A), 2022 (2022ApJ...935..167A).
 
+Images are resampled onto a common grid with SciPy: Virtanen, P., Gommers, R., Oliphant, T. E., et al.
+(2020), "SciPy 1.0: Fundamental Algorithms for Scientific Computing in Python", Nature Methods 17(3),
+261–272, https://doi.org/10.1038/s41592-019-0686-2.
+
 Also used: NumPy, FastAPI, Uvicorn, HTTPX, pytest, Ruff, Vite, Vitest, TypeScript, happy-dom, Prettier.
 Exact versions are pinned in `backend/requirements*.txt` and `frontend/package-lock.json`.
 

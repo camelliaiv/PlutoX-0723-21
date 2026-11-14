@@ -79,3 +79,22 @@ def position_at(entry: CatalogueEntry, observation_time: Time) -> SkyCoord:
         entry.proper_motion_right_ascension_milliarcseconds_per_year * years_elapsed * units.mas,
         entry.proper_motion_declination_milliarcseconds_per_year * years_elapsed * units.mas,
     )
+
+
+@dataclass(frozen=True)
+class FixedTarget:
+    position: SkyCoord
+
+
+@dataclass(frozen=True)
+class CatalogueTarget:
+    entry: CatalogueEntry
+
+
+TargetDescription = FixedTarget | CatalogueTarget
+
+
+def target_position_at(target: TargetDescription, observation_time: Time) -> SkyCoord:
+    if isinstance(target, FixedTarget):
+        return target.position
+    return position_at(target.entry, observation_time)
