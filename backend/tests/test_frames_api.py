@@ -46,7 +46,7 @@ def test_frames_returns_one_frame_per_epoch(client, synthetic_two_epoch_search):
     assert first["data_releases"] == ["spherex_dr1"]
     assert body["display_range"]["minimum"] < body["display_range"]["maximum"]
     assert any("Quick Release 3 was unavailable" in note for note in body["notes"])
-    assert any("1 exposures were skipped" in note for note in body["notes"])
+    assert any("1 exposure was skipped" in note for note in body["notes"])
 
 
 def test_frames_accepts_a_challenge_target(client, synthetic_two_epoch_search):

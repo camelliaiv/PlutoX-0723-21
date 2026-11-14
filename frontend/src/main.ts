@@ -1,42 +1,77 @@
 import "./style.css";
-import { fetchObservations } from "./api";
-import { CHALLENGE_TARGETS } from "./presets";
-import { createElement } from "./dom";
-import { renderResults } from "./render";
+import { fetchFrames, fetchObservations } from "./api";
+import { DETECTOR_BANDS, describeDetectorBand } from "./detectors";
+import { createElement, requireElement } from "./dom";
+import { createFramesPlayer } from "./framesPlayer";
 import {
-  buildCoordinatesQuery,
-  readCoordinatesFromUrl,
-  type SkyCoordinatesInput,
-} from "./urlState";
-
-function requireElement<ElementType extends Element>(selector: string): ElementType {
-  const element = document.querySelector<ElementType>(selector);
-  if (!element) {
-    throw new Error(`Required page element ${selector} is missing.`);
-  }
-  return element;
-}
+  CHALLENGE_TARGETS,
+  defaultDetectorFor,
+  findChallengeTarget,
+  FREE_COORDINATES_DETECTOR,
+} from "./presets";
+import { renderResults } from "./render";
+import { buildViewQuery, parseDetector, readViewFromUrl, type ViewState } from "./urlState";
 
 const searchForm = requireElement<HTMLFormElement>("#search-form");
 const rightAscensionInput = requireElement<HTMLInputElement>("#right-ascension-input");
 const declinationInput = requireElement<HTMLInputElement>("#declination-input");
 const searchButton = requireElement<HTMLButtonElement>("#search-button");
 const presetTargets = requireElement<HTMLDivElement>("#preset-targets");
+const detectorSelect = requireElement<HTMLSelectElement>("#detector-select");
 const resultsPanel = requireElement<HTMLDivElement>("#results-panel");
 
+const framesPlayer = createFramesPlayer();
 let activeSearch: AbortController | null = null;
+let activeTargetSlug: string | null = null;
 
-function showStatus(message: string): void {
-  const statusMessage = createElement("p", message);
-  statusMessage.className = "status";
-  resultsPanel.replaceChildren(statusMessage);
-}
-
-function showError(message: string): void {
+function showObservationsError(message: string): void {
   const errorMessage = createElement("p", message);
   errorMessage.className = "error";
   errorMessage.setAttribute("role", "alert");
   resultsPanel.replaceChildren(errorMessage);
+}
+
+function currentView(): ViewState {
+  return {
+    targetSlug: activeTargetSlug,
+    detector: parseDetector(detectorSelect.value),
+    coordinates: {
+      rightAscension: rightAscensionInput.value.trim(),
+      declination: declinationInput.value.trim(),
+    },
+  };
+}
+
+async function loadObservations(view: ViewState, signal: AbortSignal): Promise<void> {
+  const statusMessage = createElement("p", "Querying IRSA…");
+  statusMessage.className = "status";
+  resultsPanel.replaceChildren(statusMessage);
+  try {
+    resultsPanel.replaceChildren(renderResults(await fetchObservations(view.coordinates, signal)));
+  } catch (error) {
+    if (!signal.aborted) {
+      showObservationsError(error instanceof Error ? error.message : String(error));
+    }
+  }
+}
+
+async function loadFrames(view: ViewState, signal: AbortSignal): Promise<void> {
+  framesPlayer.showLoading();
+  try {
+    const response = await fetchFrames(
+      {
+        detector: view.detector ?? FREE_COORDINATES_DETECTOR,
+        targetSlug: view.targetSlug,
+        coordinates: view.coordinates,
+      },
+      signal,
+    );
+    framesPlayer.showFrames(response, findChallengeTarget(view.targetSlug)?.notice);
+  } catch (error) {
+    if (!signal.aborted) {
+      framesPlayer.showError(error instanceof Error ? error.message : String(error));
+    }
+  }
 }
 
 async function search(): Promise<void> {
@@ -44,28 +79,36 @@ async function search(): Promise<void> {
   const currentSearch = new AbortController();
   activeSearch = currentSearch;
 
-  const coordinates: SkyCoordinatesInput = {
-    rightAscension: rightAscensionInput.value.trim(),
-    declination: declinationInput.value.trim(),
-  };
-  history.replaceState(null, "", location.pathname + buildCoordinatesQuery(coordinates));
-  showStatus("Querying IRSA…");
+  const view = currentView();
+  history.replaceState(null, "", location.pathname + buildViewQuery(view));
   searchButton.disabled = true;
+  detectorSelect.disabled = true;
 
   try {
-    const response = await fetchObservations(coordinates, currentSearch.signal);
-    resultsPanel.replaceChildren(renderResults(response));
-  } catch (error) {
-    if (!currentSearch.signal.aborted) {
-      showError(error instanceof Error ? error.message : String(error));
-    }
+    await Promise.all([
+      loadObservations(view, currentSearch.signal),
+      loadFrames(view, currentSearch.signal),
+    ]);
   } finally {
     if (activeSearch === currentSearch) {
       searchButton.disabled = false;
+      detectorSelect.disabled = false;
       activeSearch = null;
     }
   }
 }
+
+function selectTarget(targetSlug: string | null, detector: number): void {
+  activeTargetSlug = targetSlug;
+  detectorSelect.value = String(detector);
+}
+
+for (const band of DETECTOR_BANDS) {
+  const option = createElement("option", describeDetectorBand(band));
+  option.value = String(band.number);
+  detectorSelect.append(option);
+}
+detectorSelect.value = String(FREE_COORDINATES_DETECTOR);
 
 for (const challengeTarget of CHALLENGE_TARGETS) {
   const targetButton = createElement("button", challengeTarget.name);
@@ -75,19 +118,39 @@ for (const challengeTarget of CHALLENGE_TARGETS) {
   targetButton.addEventListener("click", () => {
     rightAscensionInput.value = challengeTarget.coordinates.rightAscension;
     declinationInput.value = challengeTarget.coordinates.declination;
+    selectTarget(challengeTarget.slug, challengeTarget.defaultDetector);
     void search();
   });
   presetTargets.append(targetButton);
 }
+
+for (const coordinateInput of [rightAscensionInput, declinationInput]) {
+  coordinateInput.addEventListener("input", () => {
+    if (activeTargetSlug !== null) {
+      selectTarget(null, FREE_COORDINATES_DETECTOR);
+    }
+  });
+}
+
+detectorSelect.addEventListener("change", () => void search());
 
 searchForm.addEventListener("submit", (event) => {
   event.preventDefault();
   void search();
 });
 
-const coordinatesFromUrl = readCoordinatesFromUrl(location.search);
-rightAscensionInput.value = coordinatesFromUrl.rightAscension;
-declinationInput.value = coordinatesFromUrl.declination;
-if (coordinatesFromUrl.rightAscension && coordinatesFromUrl.declination) {
+const viewFromUrl = readViewFromUrl(location.search);
+const targetFromUrl = findChallengeTarget(viewFromUrl.targetSlug);
+if (targetFromUrl) {
+  rightAscensionInput.value = targetFromUrl.coordinates.rightAscension;
+  declinationInput.value = targetFromUrl.coordinates.declination;
+  selectTarget(targetFromUrl.slug, viewFromUrl.detector ?? targetFromUrl.defaultDetector);
   void search();
+} else {
+  rightAscensionInput.value = viewFromUrl.coordinates.rightAscension;
+  declinationInput.value = viewFromUrl.coordinates.declination;
+  selectTarget(null, viewFromUrl.detector ?? defaultDetectorFor(null));
+  if (viewFromUrl.coordinates.rightAscension && viewFromUrl.coordinates.declination) {
+    void search();
+  }
 }

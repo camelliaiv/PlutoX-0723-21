@@ -8,6 +8,7 @@
   --color-error: #ff7b72;
   --color-border: #30363d;
   --color-focus: #f2cc60;
+  --color-warning: #d29922;
   --radius: 6px;
 }
 
@@ -98,7 +99,8 @@ a {
   color: var(--color-accent);
 }
 
-.error {
+.error,
+#frames-status.error {
   padding: 0.75rem;
   color: var(--color-error);
   border: 1px solid var(--color-error);
@@ -125,4 +127,77 @@ td {
   padding: 0.5rem;
   border-bottom: 1px solid var(--color-border);
   text-align: left;
+}
+
+[hidden] {
+  display: none;
+}
+
+.detector-field {
+  max-width: 24rem;
+  margin: 0.5rem 0 1rem;
+}
+
+select {
+  padding: 0.5rem 0.6rem;
+  background: var(--color-surface);
+  color: var(--color-text);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  font: inherit;
+}
+
+.notices ul {
+  margin: 0.75rem 0;
+  padding: 0.75rem 0.75rem 0.75rem 2rem;
+  border: 1px solid var(--color-warning);
+  border-radius: var(--radius);
+  background: var(--color-surface);
+}
+
+.notices li + li {
+  margin-top: 0.5rem;
+}
+
+.frame-label {
+  font-weight: 600;
+}
+
+#frame-canvas {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  border: 1px solid var(--color-border);
+  image-rendering: pixelated;
+}
+
+.player-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  align-items: end;
+  margin: 0.75rem 0;
+}
+
+.slider-field {
+  flex: 1 1 12rem;
+}
+
+.slider-field input {
+  min-width: 0;
+  padding: 0;
+}
+
+.checkbox-field {
+  flex-direction: row;
+  align-items: center;
+  font-weight: 400;
+}
+
+.checkbox-field input {
+  min-width: 0;
+}
+
+.legend {
+  color: var(--color-text-muted);
 }

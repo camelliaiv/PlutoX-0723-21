@@ -42,6 +42,45 @@
         <button id="search-button" type="submit">Search</button>
       </form>
       <div id="preset-targets" role="group" aria-label="Challenge targets"></div>
+      <label class="detector-field">
+        Detector (wavelength band)
+        <select id="detector-select" name="detector"></select>
+      </label>
+      <p id="frames-status" class="status" aria-live="polite"></p>
+      <div id="frame-notices" class="notices"></div>
+      <section id="player-panel" aria-labelledby="player-heading" hidden>
+        <h2 id="player-heading">SPHEREx frames</h2>
+        <p id="frame-label" class="frame-label"></p>
+        <canvas id="frame-canvas" tabindex="0"></canvas>
+        <div class="player-controls">
+          <button id="play-button" type="button">Play</button>
+          <label>
+            Speed
+            <select id="speed-select">
+              <option value="1">1 frame per second</option>
+              <option value="2" selected>2 frames per second</option>
+              <option value="4">4 frames per second</option>
+              <option value="8">8 frames per second</option>
+            </select>
+          </label>
+          <label class="slider-field">
+            Frame
+            <input id="frame-slider" type="range" min="0" max="0" step="1" value="0" />
+          </label>
+        </div>
+        <label class="checkbox-field">
+          <input id="saturation-toggle" type="checkbox" />
+          Tint saturated pixels red
+        </label>
+        <p class="legend">
+          Grayscale uses one asinh stretch shared by all frames, so the blink is fair. Dark purple
+          pixels have no data. Red-tinted pixels contain saturated exposures. North is up and east
+          is left. Keyboard: Space plays or pauses, Left and Right arrows step through frames.
+        </p>
+        <p id="frame-provenance" class="citation"></p>
+        <p id="frame-reference" class="citation"></p>
+        <div id="frame-citations" class="citation"></div>
+      </section>
       <div id="results-panel" aria-live="polite"></div>
     </main>
     <script type="module" src="/src/main.ts"></script>

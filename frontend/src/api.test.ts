@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { describeErrorBody } from "./api";
+import { buildFramesQuery, describeErrorBody } from "./api";
 
 describe("describeErrorBody", () => {
   it("uses the archive error message", () => {
@@ -21,5 +21,19 @@ describe("describeErrorBody", () => {
 
   it("falls back to the HTTP status when the body is unreadable", () => {
     expect(describeErrorBody(null, 500)).toBe("Request failed (HTTP 500).");
+  });
+});
+
+describe("buildFramesQuery", () => {
+  const coordinates = { rightAscension: "269.4", declination: "4.7" };
+
+  it("asks for a challenge target by slug without coordinates", () => {
+    const query = buildFramesQuery({ detector: 5, targetSlug: "barnards_star", coordinates });
+    expect(query).toBe("detector=5&target=barnards_star");
+  });
+
+  it("asks for free coordinates when no target is chosen", () => {
+    const query = buildFramesQuery({ detector: 1, targetSlug: null, coordinates });
+    expect(query).toBe("detector=1&ra=269.4&dec=4.7");
   });
 });

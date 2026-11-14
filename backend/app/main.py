@@ -231,10 +231,12 @@ def frames(
     ]
     skipped_exposure_count = sum(frame.skipped_exposure_count for frame in frame_set.frames)
     if skipped_exposure_count:
-        notes.append(
-            f"{skipped_exposure_count} exposures were skipped because the target "
-            "falls outside the detector."
+        exposure_phrase = (
+            "1 exposure was"
+            if skipped_exposure_count == 1
+            else f"{skipped_exposure_count} exposures were"
         )
+        notes.append(f"{exposure_phrase} skipped because the target falls outside the detector.")
     if frame_set.epochs_without_frames:
         epoch_list = ", ".join(str(number) for number in frame_set.epochs_without_frames)
         notes.append(f"Epoch {epoch_list} has no frame: the target is off the detector there.")

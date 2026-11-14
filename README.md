@@ -7,7 +7,8 @@ SPHEREx observations — the same "blink" idea Clyde Tombaugh used to discover P
 ## Features
 - Search by RA/Dec (decimal degrees or `08h55m10.831s -07d14m42.53s`) or pick a challenge target
 - Lists the available SPHEREx observations grouped by survey epoch and detector band
-- Shareable links: `?ra=…&dec=…`
+- Blink player of real SPHEREx per-epoch frames for a chosen detector (north up, east left, shared stretch, saturation overlay)
+- Shareable links: `?target=…&detector=…` or `?ra=…&dec=…&detector=…`
 
 ## Quick start
 Requires Python 3.11+ and Node.js 22.12+.
