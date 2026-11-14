@@ -6,6 +6,7 @@ from fastapi.responses import JSONResponse
 
 from app import spherex_archive
 from app.coordinates import CoordinateError, parse_declination, parse_right_ascension
+from app.errors import ArchiveError
 from app.spherex_archive import Collection, ObservationEpoch, ObservationImage
 
 ARCHIVE_TIMEOUT_SECONDS = float(os.environ.get("ARCHIVE_TIMEOUT_SECONDS", "30"))
@@ -36,10 +37,8 @@ class ObservationsResponse:
 app = FastAPI(title="PlutoX API")
 
 
-@app.exception_handler(spherex_archive.ArchiveError)
-async def handle_archive_error(
-    _request: Request, error: spherex_archive.ArchiveError
-) -> JSONResponse:
+@app.exception_handler(ArchiveError)
+async def handle_archive_error(_request: Request, error: ArchiveError) -> JSONResponse:
     return JSONResponse(status_code=error.http_status, content={"error": error.message})
 
 

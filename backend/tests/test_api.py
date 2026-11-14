@@ -1,6 +1,7 @@
 import pytest
 
 from app import spherex_archive
+from app.errors import ArchiveError
 
 
 @pytest.fixture
@@ -39,6 +40,7 @@ def test_observations_lists_every_image_with_its_details(client, archive_returns
         "wavelength_min_micrometers",
         "wavelength_max_micrometers",
         "download_url",
+        "mirror_url",
     }
 
 
@@ -80,7 +82,7 @@ def test_invalid_input_is_rejected(client, parameters):
 @pytest.mark.parametrize("http_status", [502, 504])
 def test_archive_failure_is_reported(client, monkeypatch, http_status):
     def fail(url, timeout_seconds):
-        raise spherex_archive.ArchiveError(http_status, "archive unavailable")
+        raise ArchiveError(http_status, "archive unavailable")
 
     monkeypatch.setattr(spherex_archive, "download_search_response", fail)
     response = client.get("/api/observations", params={"ra": "1", "dec": "1"})

@@ -14,6 +14,9 @@ import httpx
 from astropy.io.votable import parse_single_table
 from astropy.time import Time
 
+from app.errors import ArchiveError
+from app.mirror_cutout import mirror_url
+
 SEARCH_SERVICE_URL = "https://irsa.ipac.caltech.edu/SIA"
 EPOCH_GAP_DAYS = 30.0
 METERS_TO_MICROMETERS = 1e6
@@ -30,15 +33,6 @@ COLLECTION_TITLES = {
 }
 
 
-class ArchiveError(Exception):
-    """The archive could not be reached or returned an unusable response."""
-
-    def __init__(self, http_status: int, message: str):
-        super().__init__(message)
-        self.http_status = http_status
-        self.message = message
-
-
 @dataclass(frozen=True)
 class ObservationImage:
     observation_id: str
@@ -48,6 +42,7 @@ class ObservationImage:
     wavelength_min_micrometers: float
     wavelength_max_micrometers: float
     download_url: str
+    mirror_url: str
 
 
 @dataclass(frozen=True)
@@ -109,6 +104,7 @@ def parse_images(search_response: bytes) -> list[ObservationImage]:
                 wavelength_min_micrometers=float(row["em_min"]) * METERS_TO_MICROMETERS,
                 wavelength_max_micrometers=float(row["em_max"]) * METERS_TO_MICROMETERS,
                 download_url=str(row["access_url"]),
+                mirror_url=mirror_url(str(row["cloud_access"])),
             )
             for row in table
         ]

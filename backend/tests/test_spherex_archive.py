@@ -2,7 +2,8 @@ import httpx
 import pytest
 
 from app import spherex_archive
-from app.spherex_archive import ArchiveError, Collection, ObservationImage
+from app.errors import ArchiveError
+from app.spherex_archive import Collection, ObservationImage
 
 
 def make_image(
@@ -16,6 +17,7 @@ def make_image(
         wavelength_min_micrometers=0.0,
         wavelength_max_micrometers=0.0,
         download_url="",
+        mirror_url="",
     )
 
 
@@ -27,6 +29,9 @@ def test_search_response_is_parsed_into_images(barnard_star_search_response):
     assert first_image.observation_date.startswith("2025-08")
     assert 0.7 < first_image.wavelength_min_micrometers < 5.5
     assert first_image.download_url.startswith("https://irsa.ipac.caltech.edu/")
+    assert first_image.mirror_url.startswith(
+        "https://nasa-irsa-spherex.s3.us-east-1.amazonaws.com/dr1/level2/"
+    )
 
 
 def test_parsed_images_are_sorted_by_observation_time(barnard_star_search_response):

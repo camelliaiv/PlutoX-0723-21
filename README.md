@@ -39,8 +39,7 @@ frontend/   Vite + TypeScript web app
 ```
 
 ## Data & credits
-- SPHEREx spectral images: NASA/IPAC Infrared Science Archive (IRSA), SPHEREx Data Release 1,
-  accessed via the IVOA SIA2 service: https://irsa.ipac.caltech.edu/Missions/spherex.html
-- Built with [Astropy](https://www.astropy.org/), FastAPI and Vite.
-- Independent project using public NASA data; not affiliated with or endorsed by NASA.
-- AI tools were used during development.
+SPHEREx Data Release 1 images from the NASA/IPAC Infrared Science Archive (IRSA); target positions from
+ESA Gaia DR3, AllWISE and CatWISE2020. Full acknowledgements in [CREDITS.md](CREDITS.md).
+
+Independent project using public NASA data; not affiliated with or endorsed by NASA.
