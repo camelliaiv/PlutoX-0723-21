@@ -25,6 +25,7 @@ from app.spherex_archive import (
 )
 from app.target_astrometry import TargetDescription, target_position_at
 
+FRAME_RECIPE_VERSION = 1
 PIXEL_SCALE_ARCSECONDS = 6.15
 CUTOUT_MARGIN_PIXELS = 6
 MAXIMUM_WORKER_COUNT = 8

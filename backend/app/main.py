@@ -7,7 +7,7 @@ from astropy.coordinates import SkyCoord
 from fastapi import FastAPI, HTTPException, Query, Request
 from fastapi.responses import JSONResponse
 
-from app import spherex_archive
+from app import frame_cache, spherex_archive
 from app.coordinates import CoordinateError, parse_declination, parse_right_ascension
 from app.epoch_coadd import (
     PIXEL_SCALE_ARCSECONDS,
@@ -16,6 +16,13 @@ from app.epoch_coadd import (
     build_epoch_frames,
 )
 from app.errors import ArchiveError
+from app.frames_models import (
+    DisplayRange,
+    FrameResponse,
+    FramesResponse,
+    GridDescription,
+    SkyPosition,
+)
 from app.mirror_cutout import http_range_reader, open_mirror_client
 from app.spherex_archive import COLLECTION_TITLES, Collection, ObservationEpoch, ObservationImage
 from app.target_astrometry import (
@@ -41,12 +48,6 @@ class HealthResponse:
 
 
 @dataclass(frozen=True)
-class SkyPosition:
-    right_ascension: float
-    declination: float
-
-
-@dataclass(frozen=True)
 class ObservationsResponse:
     target: SkyPosition
     collection: Collection
@@ -55,50 +56,6 @@ class ObservationsResponse:
     image_count: int
     epochs: list[ObservationEpoch]
     images: list[ObservationImage]
-
-
-@dataclass(frozen=True)
-class GridDescription:
-    size_pixels: int
-    pixel_scale_arcseconds: float
-    center: SkyPosition
-    orientation: str
-
-
-@dataclass(frozen=True)
-class DisplayRange:
-    minimum: float
-    maximum: float
-
-
-@dataclass(frozen=True)
-class FrameResponse:
-    epoch_number: int
-    start_date: str
-    end_date: str
-    detector: int
-    exposure_count: int
-    skipped_exposure_count: int
-    wavelength_min_micrometers: float
-    wavelength_max_micrometers: float
-    observation_ids: list[str]
-    data_releases: list[Collection]
-    image: list[list[float | None]]
-    variance: list[list[float | None]]
-    coverage: list[list[int]]
-    saturated_fraction: list[list[float | None]]
-
-
-@dataclass(frozen=True)
-class FramesResponse:
-    reference_position: SkyPosition
-    reference_date: str
-    grid: GridDescription
-    unit: str
-    display_range: DisplayRange | None
-    citations: list[str]
-    frames: list[FrameResponse]
-    notes: list[str]
 
 
 app = FastAPI(title="PlutoX API")
@@ -207,6 +164,28 @@ def frames(
     dec: str | None = Query(None, description="Declination: decimal or sexagesimal degrees"),
 ) -> FramesResponse:
     target_description = _resolve_target(target, ra, dec)
+    cache_key = _cache_key(target, target_description, detector, size)
+    cached_response = frame_cache.read_cached_frames(cache_key)
+    if cached_response is not None:
+        return cached_response
+    response, is_complete = _live_frames(target_description, detector, size)
+    if is_complete:
+        frame_cache.write_cached_frames(cache_key, response)
+    return response
+
+
+def _cache_key(
+    target: str | None, target_description: TargetDescription, detector: int, size: int
+) -> frame_cache.FrameCacheKey:
+    if target is not None:
+        return frame_cache.key_for_target(target, detector, size)
+    position = target_position_at(target_description, SURVEY_MIDPOINT_TIME)
+    return frame_cache.key_for_coordinates(position.ra.deg, position.dec.deg, detector, size)
+
+
+def _live_frames(
+    target_description: TargetDescription, detector: int, size: int
+) -> tuple[FramesResponse, bool]:
     search_position = target_position_at(target_description, SURVEY_MIDPOINT_TIME)
     search = spherex_archive.search_releases(
         search_position.ra.deg,
@@ -245,7 +224,7 @@ def frames(
 
     used_releases = {release for frame in frame_set.frames for release in frame.data_releases}
     reference_position = _sky_position(frame_set.reference_position)
-    return FramesResponse(
+    response = FramesResponse(
         reference_position=reference_position,
         reference_date=frame_set.reference_date,
         grid=GridDescription(
@@ -259,4 +238,8 @@ def frames(
         citations=[spherex_archive.citation_for(release) for release in sorted(used_releases)],
         frames=[_frame_response(frame) for frame in frame_set.frames],
         notes=notes,
+        served_from_cache=False,
+        computed_at=frame_cache.current_timestamp(),
     )
+    is_complete = not search.unavailable_releases and bool(frame_set.frames)
+    return response, is_complete

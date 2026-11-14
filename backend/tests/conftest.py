@@ -16,3 +16,10 @@ def barnard_star_search_response() -> bytes:
 @pytest.fixture
 def client() -> TestClient:
     return TestClient(main.app)
+
+
+@pytest.fixture(autouse=True)
+def isolated_frame_cache(tmp_path, monkeypatch) -> Path:
+    cache_directory = tmp_path / "frame_cache"
+    monkeypatch.setenv("FRAME_CACHE_DIRECTORY", str(cache_directory))
+    return cache_directory

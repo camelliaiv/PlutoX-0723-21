@@ -221,6 +221,7 @@ __marimo__/
 
 # Project
 data/
+backend/frame_cache/
 node_modules/
 dist-ssr/
 *.local

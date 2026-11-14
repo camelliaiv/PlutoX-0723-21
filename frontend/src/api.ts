@@ -60,6 +60,8 @@ export interface FramesResponse {
   citations: string[];
   frames: Frame[];
   notes: string[];
+  served_from_cache: boolean;
+  computed_at: string;
 }
 
 export interface FramesRequest {
