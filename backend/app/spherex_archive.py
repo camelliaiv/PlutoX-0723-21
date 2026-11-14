@@ -7,6 +7,7 @@ import io
 from collections import Counter
 from dataclasses import dataclass
 from enum import StrEnum
+from itertools import pairwise
 from urllib.parse import urlencode
 
 import httpx
@@ -98,9 +99,7 @@ def _modified_julian_date_to_iso(modified_julian_date: float) -> str:
 def parse_images(search_response: bytes) -> list[ObservationImage]:
     """Convert an SIA2 VOTable response into image descriptions sorted by observation time."""
     try:
-        table = parse_single_table(io.BytesIO(search_response)).to_table(
-            use_names_over_ids=True
-        )
+        table = parse_single_table(io.BytesIO(search_response)).to_table(use_names_over_ids=True)
         images = [
             ObservationImage(
                 observation_id=str(row["obs_id"]),
@@ -128,7 +127,7 @@ def group_into_epochs(
         return []
     images_by_time = sorted(images, key=lambda image: image.observation_start_modified_julian_date)
     epochs = [[images_by_time[0]]]
-    for previous_image, image in zip(images_by_time, images_by_time[1:]):
+    for previous_image, image in pairwise(images_by_time):
         days_between = (
             image.observation_start_modified_julian_date
             - previous_image.observation_start_modified_julian_date

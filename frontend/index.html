@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="color-scheme" content="dark" />
+    <meta
+      name="description"
+      content="Enter sky coordinates and explore how that patch of sky changes across real NASA SPHEREx observations."
+    />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <title>PlutoX 0723+21</title>
+  </head>
+  <body>
+    <main>
+      <h1>PlutoX 0723+21</h1>
+      <p class="lead">
+        Which SPHEREx images exist for a patch of sky? Enter coordinates in decimal degrees or
+        sexagesimal notation.
+      </p>
+      <form id="search-form">
+        <label>
+          Right ascension (RA)
+          <input
+            id="right-ascension-input"
+            name="ra"
+            autocomplete="off"
+            placeholder="269.4465 or 17h57m47s"
+            required
+          />
+        </label>
+        <label>
+          Declination (Dec)
+          <input
+            id="declination-input"
+            name="dec"
+            autocomplete="off"
+            placeholder="4.7668 or +04d46m00s"
+            required
+          />
+        </label>
+        <button id="search-button" type="submit">Search</button>
+      </form>
+      <div id="preset-targets" role="group" aria-label="Challenge targets"></div>
+      <div id="results-panel" aria-live="polite"></div>
+    </main>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>

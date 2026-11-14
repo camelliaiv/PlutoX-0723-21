@@ -222,3 +222,5 @@ __marimo__/
 # Project
 data/
 node_modules/
+dist-ssr/
+*.local

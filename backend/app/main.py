@@ -2,7 +2,6 @@ import os
 from dataclasses import dataclass
 
 from fastapi import FastAPI, HTTPException, Query, Request
-from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
 from app import spherex_archive
@@ -10,7 +9,6 @@ from app.coordinates import CoordinateError, parse_declination, parse_right_asce
 from app.spherex_archive import Collection, ObservationEpoch, ObservationImage
 
 ARCHIVE_TIMEOUT_SECONDS = float(os.environ.get("ARCHIVE_TIMEOUT_SECONDS", "30"))
-FRONTEND_DEVELOPMENT_ORIGIN = "http://localhost:5173"
 
 
 @dataclass(frozen=True)
@@ -36,11 +34,6 @@ class ObservationsResponse:
 
 
 app = FastAPI(title="PlutoX API")
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=[FRONTEND_DEVELOPMENT_ORIGIN],
-    allow_methods=["GET"],
-)
 
 
 @app.exception_handler(spherex_archive.ArchiveError)

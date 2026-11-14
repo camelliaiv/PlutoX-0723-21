@@ -10,7 +10,7 @@ SPHEREx observations — the same "blink" idea Clyde Tombaugh used to discover P
 - Shareable links: `?ra=…&dec=…`
 
 ## Quick start
-Requires Python 3.11+ and Node.js 20+.
+Requires Python 3.11+ and Node.js 22.12+.
 
 ```bash
 # backend
@@ -27,9 +27,10 @@ npm run dev                                                # http://localhost:51
 
 ## Tests
 ```bash
-cd backend  && ../.venv/Scripts/python -m pytest   # add "-m network" for the live archive test
-cd frontend && npm test && npm run build
+cd backend  && ../.venv/Scripts/python -m pytest && ../.venv/Scripts/python -m ruff check . && ../.venv/Scripts/python -m ruff format --check .
+cd frontend && npm test && npm run format:check && npm run build
 ```
+Add `-m network` to `pytest` to also run the live archive test.
 
 ## Project structure
 ```
