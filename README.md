@@ -6,13 +6,23 @@
 (*Planet X and SPHEREx*): enter sky coordinates and see how that patch of sky changes across real
 SPHEREx observations — the same "blink" idea Clyde Tombaugh used to discover Pluto in 1930.
 
-**Live app:** https://plutox-0723-21.onrender.com
+**Live app:** https://plutox-0723-21.onrender.com (free hosting: after 15 minutes without visitors the
+first load takes about a minute while the server wakes up)
+
+**Presentation:** [PlutoX 0723+21 Presentation.pdf](PlutoX%200723%2B21%20Presentation.pdf)
 
 ## Features
-- Search by RA/Dec (decimal degrees or `08h55m10.831s -07d14m42.53s`) or pick a challenge target
-- Lists the available SPHEREx observations grouped by survey epoch and detector band
-- Blink player of real SPHEREx per-epoch frames for a chosen detector (north up, east left, shared stretch, saturation overlay)
-- Shareable links: `?target=…&detector=…` or `?ra=…&dec=…&detector=…`
+- **Sky**: a live 3D sky of about 107,000 Gaia DR3 stars plus the brightest Hipparcos stars over ESA's Gaia
+  all-sky map; fly to the five challenge targets, take a tour, or search any RA/Dec (decimal or
+  `08h55m10.831s -07d14m42.53s`)
+- **Time machine**: real SPHEREx frames, one per survey epoch and detector, played like a little video;
+  Frame, Difference (versus the first epoch) and Stack modes; predicted-position marker and track; zoom;
+  filmstrip and a D1–D6 wavelength rail; saturated pixels flagged, never hidden
+- **Pixel scale**: spectrum from all six detectors, light curve, and a time × wavelength matrix of real frames
+- **Guide**: answers about the selected target computed only from the loaded data, with citations and a
+  confidence level
+- **Challenge**: a checklist of how each item of the challenge statement is covered
+- Shareable links: `?view=…&target=…&detector=…` or `?ra=…&dec=…&detector=…`
 
 ## Quick start
 Requires Python 3.11+ and Node.js 22.12+.

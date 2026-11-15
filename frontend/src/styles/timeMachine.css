@@ -624,3 +624,20 @@ body[data-view="time"] .app-main {
     min-height: var(--touch-target);
   }
 }
+
+@media (max-width: 720px) {
+  .time-stage {
+    order: 1;
+  }
+
+  .rail {
+    order: 2;
+    max-width: 100%;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+  }
+
+  .facts {
+    order: 3;
+  }
+}

@@ -33,6 +33,8 @@ const framesCache = createFramesCache();
 const timeMachine = createTimeMachine({
   framesCache,
   onViewChange: writeUrl,
+  onCoordinateSearch: (rightAscensionText, declinationText) =>
+    skyView.showUserPosition(rightAscensionText, declinationText),
   onStateChange: () => {
     pixelScaleView.refresh();
     followTimeMachineTarget();

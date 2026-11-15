@@ -53,6 +53,7 @@ export interface TimeMachineOptions {
   framesCache: FramesCache;
   onViewChange(view: ViewState): void;
   onStateChange(): void;
+  onCoordinateSearch(rightAscensionText: string, declinationText: string): void;
 }
 
 export interface FrameSelection {
@@ -676,6 +677,7 @@ export function createTimeMachine(options: TimeMachineOptions): TimeMachine {
 
   searchForm.addEventListener("submit", (event) => {
     event.preventDefault();
+    options.onCoordinateSearch(rightAscensionInput.value, declinationInput.value);
     void load();
   });
 

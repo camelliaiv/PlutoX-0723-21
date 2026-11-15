@@ -94,8 +94,8 @@ export interface LightCurveModelInput {
 
 export const SPECTRUM_HEIGHT = 300;
 export const LIGHT_CURVE_HEIGHT = 240;
-export const SPECTRUM_PADDING: ChartPadding = { left: 52, right: 12, top: 22, bottom: 34 };
-export const LIGHT_CURVE_PADDING: ChartPadding = { left: 52, right: 12, top: 14, bottom: 34 };
+export const SPECTRUM_PADDING: ChartPadding = { left: 52, right: 30, top: 22, bottom: 34 };
+export const LIGHT_CURVE_PADDING: ChartPadding = { left: 52, right: 30, top: 14, bottom: 34 };
 export const MINIMUM_CHART_WIDTH = 280;
 
 const SPECTRUM_WAVELENGTH_START = 0.7;

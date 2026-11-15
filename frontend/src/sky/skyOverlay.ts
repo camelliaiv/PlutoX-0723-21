@@ -32,6 +32,12 @@ export interface OverlayFrame {
   topInset: number;
   fallbackStars: readonly FallbackStar[] | null;
   hideDecorations: boolean;
+  userPosition: UserMarker | null;
+}
+
+export interface UserMarker {
+  position: Vector3;
+  label: string;
 }
 
 const DISTANCE_RING_RADII_PARSECS = [1, 3, 10, 30, 100, 300, 1000, 3000];
@@ -46,6 +52,7 @@ const LABEL_SPACING = 30;
 const BACKGROUND_ARROW_DISTANCE_FACTOR = 4;
 const SUN_GLOW_RADIUS = 26;
 const FALLBACK_MAGNITUDE_LIMIT = 14.5;
+const USER_MARKER_RADIUS = 13;
 
 const COLOURS = {
   fallbackInner: "#0b1330",
@@ -61,6 +68,8 @@ const COLOURS = {
   directionLine: "rgba(255, 138, 31, 0.35)",
   ringLabel: "rgba(150, 176, 230, 0.55)",
   shadow: "#000000",
+  userMarker: "#5aaaff",
+  userMarkerLabel: "#cfe6ff",
 } as const;
 
 interface PendingLabel {
@@ -114,10 +123,48 @@ export class SkyOverlay {
     const positions = new Map<string, TargetScreenPosition>();
     if (frame.showTargets) {
       this.drawTargets(frame, sunScreen, positions);
+      if (frame.userPosition) {
+        this.drawUserMarker(frame, frame.userPosition);
+      }
     } else {
       this.lastDrawTime = frame.time;
     }
     return positions;
+  }
+
+  private drawUserMarker(frame: OverlayFrame, marker: UserMarker): void {
+    const { context } = this;
+    const { viewport } = frame;
+    const screen = projectToScreen(frame.basis, marker.position, viewport);
+    if (screen.depth < MINIMUM_DEPTH) {
+      return;
+    }
+    const x = clamp(screen.x, EDGE_INSET, viewport.width - EDGE_INSET);
+    const y = clamp(screen.y, frame.topInset, viewport.height - BOTTOM_INSET);
+    const pulse = frame.reducedMotion
+      ? 0.5
+      : Math.sin(frame.time / PULSE_PERIOD_MILLISECONDS) * 0.5 + 0.5;
+    context.lineWidth = 2;
+    context.strokeStyle = COLOURS.userMarker;
+    context.beginPath();
+    context.arc(x, y, USER_MARKER_RADIUS, 0, Math.PI * 2);
+    context.stroke();
+    context.lineWidth = 1;
+    context.strokeStyle = `rgba(90, 170, 255, ${0.2 + pulse * 0.3})`;
+    context.beginPath();
+    context.arc(x, y, USER_MARKER_RADIUS + 5 + pulse * 4, 0, Math.PI * 2);
+    context.stroke();
+    const onRight = x > viewport.width / 2;
+    const labelX = x + (onRight ? -1 : 1) * (USER_MARKER_RADIUS + 10);
+    context.textAlign = onRight ? "right" : "left";
+    context.shadowColor = COLOURS.shadow;
+    context.shadowBlur = 6;
+    context.fillStyle = COLOURS.userMarkerLabel;
+    context.font = `600 13px ${this.bodyFont}`;
+    context.fillText("Your position", labelX, y - 2);
+    context.font = `11px ${this.monospaceFont}`;
+    context.fillText(marker.label, labelX, y + 13);
+    context.shadowBlur = 0;
   }
 
   private drawFallbackStars(frame: OverlayFrame, stars: readonly FallbackStar[]): void {

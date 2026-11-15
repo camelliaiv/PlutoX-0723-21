@@ -87,6 +87,7 @@ describe("time machine", () => {
       framesCache: createFramesCache(),
       onViewChange: () => undefined,
       onStateChange: () => undefined,
+      onCoordinateSearch: () => undefined,
     });
     const labels = Array.from(document.querySelectorAll("#target-select option")).map(
       (option) => option.textContent,
@@ -101,6 +102,7 @@ describe("time machine", () => {
       framesCache: createFramesCache(),
       onViewChange,
       onStateChange: () => undefined,
+      onCoordinateSearch: () => undefined,
     });
     timeMachine.setActive(true);
     timeMachine.openTarget("barnards_star");
@@ -127,6 +129,7 @@ describe("time machine", () => {
       framesCache: createFramesCache(),
       onViewChange: () => undefined,
       onStateChange: () => undefined,
+      onCoordinateSearch: () => undefined,
     });
     timeMachine.restore({ ...createEmptyView(), targetSlug: "barnards_star" });
     await settle();
