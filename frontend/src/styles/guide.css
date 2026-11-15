@@ -17,7 +17,7 @@
 }
 
 .guide-question {
-  min-height: 2rem;
+  min-height: 2.75rem;
   padding: var(--space-1) var(--space-3);
   border: 1px solid var(--color-navy-600);
   border-radius: 99px;
@@ -95,4 +95,8 @@
 .guide-confidence-low {
   border-color: #ff8b80aa;
   color: var(--color-error);
+}
+
+.guide-answer {
+  overflow-wrap: anywhere;
 }

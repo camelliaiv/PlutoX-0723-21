@@ -224,3 +224,7 @@ data/
 node_modules/
 dist-ssr/
 *.local
+
+# Local browser profiles from automated checks
+frontend/profile*/
+profile*/

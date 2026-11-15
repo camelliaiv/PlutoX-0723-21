@@ -70,3 +70,5 @@ reference for reading spectral image wavelengths and flags.
 
 ## AI assistance
 Claude Code (Anthropic) was used as an AI assistant for planning, code and documentation.
+The README banner (`assets/plutox-banner.png`) is an AI-generated image and carries a visible
+"AI-GENERATED IMAGE" label.

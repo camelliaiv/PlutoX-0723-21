@@ -14,6 +14,7 @@ import {
   formatReferencePosition,
 } from "./frameText";
 import { describeLegend } from "./legendText";
+import { appendRetryButton } from "./retryButton";
 import { describeLoading } from "./loadingText";
 import { predictedPositionToImagePoint, type ImagePoint } from "./markers";
 import {
@@ -74,6 +75,7 @@ export interface TimeMachine {
   selectFrame(detector: number, epochIndex: number): void;
   requestAllDetectors(): void;
   reset(): void;
+  retry(): void;
   setActive(isActive: boolean): void;
 }
 
@@ -188,6 +190,9 @@ export function createTimeMachine(options: TimeMachineOptions): TimeMachine {
     statusMessage.className = isError ? "error" : "status";
     statusMessage.setAttribute("role", isError ? "alert" : "status");
     statusMessage.textContent = message;
+    if (isError) {
+      appendRetryButton(statusMessage, retryLoad);
+    }
     options.onStateChange();
   }
 
@@ -373,6 +378,10 @@ export function createTimeMachine(options: TimeMachineOptions): TimeMachine {
     if (activeRequest === null && !hasFailed) {
       openTarget(DEFAULT_TARGET_SLUG);
     }
+  }
+
+  function retryLoad(): void {
+    void load();
   }
 
   async function load(): Promise<void> {
@@ -706,6 +715,8 @@ export function createTimeMachine(options: TimeMachineOptions): TimeMachine {
         openDefaultTargetWhenNothingWasRequested();
       }
     },
+
+    retry: retryLoad,
 
     reset(): void {
       activeRequest?.abort();

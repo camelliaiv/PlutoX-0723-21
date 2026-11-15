@@ -587,3 +587,40 @@ body[data-view="time"] .app-main {
     min-height: var(--touch-target);
   }
 }
+
+@media (max-width: 760px) {
+  .ring-frame,
+  .player-controls,
+  .filmstrip {
+    max-width: 100%;
+  }
+
+  .player-controls {
+    flex-wrap: wrap;
+    gap: var(--space-2);
+  }
+
+  .filmstrip {
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+  }
+
+  .rail-detector {
+    min-height: var(--touch-target);
+  }
+}
+
+@media (pointer: coarse) {
+  .target-chip,
+  .zoom-value + button,
+  .rail-detector {
+    min-height: var(--touch-target);
+  }
+}
+
+@media (pointer: coarse) {
+  .time-head select,
+  .time-head input {
+    min-height: var(--touch-target);
+  }
+}

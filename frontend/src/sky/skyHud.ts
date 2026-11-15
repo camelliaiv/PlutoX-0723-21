@@ -8,6 +8,7 @@ export const FIRST_VISIT_HINT =
 
 const GAIA_MAGNITUDE_LIMIT = "8.5";
 const NEARBY_DISTANCE_PARSECS_TEXT = "17";
+const NARROW_HINT_VISIBLE_MILLISECONDS = 4000;
 const HINT_VISIBLE_MILLISECONDS = 7000;
 const TOUR_IDLE_TEXT = "▶ Tour the five targets";
 const TOUR_RUNNING_TEXT = "■ Stop tour";
@@ -32,7 +33,7 @@ export interface SkyHud {
   setScale(label: string, widthPixels: number): void;
   setReadout(text: string): void;
   setLoading(fraction: number | null): void;
-  showLoadingError(message: string): void;
+  showLoadingError(message: string, onRetry: () => void): void;
   showCard(target: SkyTarget): void;
   hideCard(): void;
   setSelectedChip(slug: string | null): void;
@@ -125,6 +126,9 @@ export function createSkyHud(handlers: SkyHudHandlers): SkyHud {
   const firstVisitHint = createElement("div", FIRST_VISIT_HINT);
   firstVisitHint.className = "sky-first-visit-hint glass-panel";
   firstVisitHint.setAttribute("role", "note");
+  firstVisitHint.addEventListener("click", () => {
+    firstVisitHint.classList.remove("sky-first-visit-hint-visible");
+  });
   let hintTimer: number | null = null;
 
   const card = createElement("div");
@@ -159,7 +163,12 @@ export function createSkyHud(handlers: SkyHudHandlers): SkyHud {
   const loadingText = createElement("p");
   const loadingBar = createElement("progress");
   loadingBar.max = 100;
-  loading.append(loadingText, loadingBar);
+  let loadingRetryHandler: () => void = () => undefined;
+  const loadingRetry = createButton("Try again", "glass-button retry-button", () =>
+    loadingRetryHandler(),
+  );
+  loadingRetry.hidden = true;
+  loading.append(loadingText, loadingBar, loadingRetry);
 
   const tooltip = createElement("div");
   tooltip.className = "sky-tooltip";
@@ -207,17 +216,22 @@ export function createSkyHud(handlers: SkyHudHandlers): SkyHud {
     },
     setLoading(fraction: number | null): void {
       loading.hidden = fraction === null;
+      loadingBar.hidden = false;
+      loadingRetry.hidden = true;
+      loading.setAttribute("role", "status");
       if (fraction !== null) {
         const percent = Math.round(fraction * 100);
-        loadingText.textContent = `Loading the sky… ${percent} %`;
+        loadingText.textContent = `Loading the sky: star catalogue and Milky Way image… ${percent} %`;
         loadingBar.value = percent;
       }
     },
-    showLoadingError(message: string): void {
+    showLoadingError(message: string, onRetry: () => void): void {
       loading.hidden = false;
       loadingBar.hidden = true;
       loadingText.textContent = message;
       loading.setAttribute("role", "alert");
+      loadingRetry.hidden = false;
+      loadingRetryHandler = onRetry;
     },
     showCard(target: SkyTarget): void {
       const detector = DETECTOR_BANDS.find((band) => band.number === target.defaultDetector);
@@ -281,7 +295,9 @@ export function createSkyHud(handlers: SkyHudHandlers): SkyHud {
       }
       hintTimer = window.setTimeout(
         () => firstVisitHint.classList.remove("sky-first-visit-hint-visible"),
-        HINT_VISIBLE_MILLISECONDS,
+        window.matchMedia("(max-width: 760px)").matches
+          ? NARROW_HINT_VISIBLE_MILLISECONDS
+          : HINT_VISIBLE_MILLISECONDS,
       );
     },
     hideFirstVisitHint(): void {

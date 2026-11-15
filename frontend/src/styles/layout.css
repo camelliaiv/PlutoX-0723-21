@@ -119,3 +119,111 @@ body[data-view="sky"] {
   margin: var(--space-6) auto;
   text-align: center;
 }
+
+.pixel-content,
+.pixel-content > *,
+.time-stage,
+.time-stage > * {
+  min-width: 0;
+}
+
+.view-panel > * {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.retry-button {
+  margin-top: var(--space-2);
+}
+
+.status .retry-button,
+.error .retry-button {
+  margin-left: var(--space-3);
+}
+
+@media (max-width: 760px) {
+  .app-main {
+    padding-inline: max(1rem, env(safe-area-inset-left, 0px))
+      max(1rem, env(safe-area-inset-right, 0px));
+    padding-bottom: calc(var(--space-7) + env(safe-area-inset-bottom, 0px));
+  }
+
+  .header-actions .glass-button {
+    min-width: var(--touch-target);
+    min-height: var(--touch-target);
+    justify-content: center;
+  }
+}
+
+@media (max-height: 520px) and (orientation: landscape) {
+  :root {
+    --bar-height: 56px;
+  }
+
+  .app-header {
+    padding-top: calc(4px + env(safe-area-inset-top, 0px));
+  }
+
+  .view-tabs {
+    top: calc(4px + env(safe-area-inset-top, 0px));
+    right: auto;
+    left: 50%;
+    transform: translateX(-50%);
+  }
+
+  .view-tab {
+    padding-inline: var(--space-3);
+  }
+}
+
+.app-header::before {
+  position: absolute;
+  inset: 0 0 -18px;
+  z-index: -1;
+  content: "";
+  pointer-events: none;
+}
+
+body:not([data-view="sky"]) .app-header::before {
+  background: linear-gradient(to bottom, #05070f 0%, #05070ff2 62%, #05070f00 100%);
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+  -webkit-mask-image: linear-gradient(to bottom, #000 0, #000 calc(100% - 18px), transparent 100%);
+  mask-image: linear-gradient(to bottom, #000 0, #000 calc(100% - 18px), transparent 100%);
+}
+
+.sheet-back {
+  display: none;
+}
+
+.sheet-backdrop {
+  display: none;
+}
+
+@media (max-width: 760px) {
+  .sheet-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 35;
+    display: block;
+    background: #05070f80;
+    pointer-events: auto;
+  }
+
+  .sheet-back {
+    display: inline-flex;
+    margin-bottom: var(--space-2);
+  }
+
+  .sheet {
+    touch-action: pan-y;
+  }
+
+  .view-tabs {
+    z-index: 1;
+  }
+}
+
+body:not([data-view="sky"]) .view-tabs {
+  background: #0a1020f2;
+}

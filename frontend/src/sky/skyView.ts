@@ -48,10 +48,10 @@ const TOUR_PAUSE_MILLISECONDS = 2200;
 const TOUR_PAUSE_REDUCED_MOTION_MILLISECONDS = 3000;
 const SCALE_BAR_PIXELS = 150;
 const NARROW_SCREEN_PIXELS = 760;
-const TOP_INSET_NARROW = 170;
+const TOP_INSET_NARROW = 204;
 const TOP_INSET_WIDE = 110;
 const BACKGROUND_FRAME_INTERVAL = 2;
-const LOAD_ERROR_MESSAGE = "The sky could not be loaded. Reload the page to try again.";
+const LOAD_ERROR_MESSAGE = "The sky could not be loaded. Check the connection and try again.";
 
 export function createSkyView(options: SkyViewOptions): SkyView {
   const glCanvas = requireElement<HTMLCanvasElement>("#sky-gl");
@@ -347,27 +347,30 @@ export function createSkyView(options: SkyViewOptions): SkyView {
     });
   }
 
-  hud.setLoading(0);
-  loadSkyAssets((fraction) => hud.setLoading(fraction))
-    .then((assets) => {
-      catalogue = buildSkyCatalogue(assets.stars, assets.brightStars);
-      hud.describeAbout(assets.manifest);
-      renderer = createWebGlRenderer(
-        glCanvas,
-        catalogue,
-        assets.milkyWayImage,
-        useFallbackRenderer,
-      );
-      if (renderer === null) {
-        useFallbackRenderer();
-      }
-      hud.setLoading(null);
-      ready = true;
-      if (introActive) {
-        startIntroFlight();
-      }
-    })
-    .catch(() => hud.showLoadingError(LOAD_ERROR_MESSAGE));
+  function startLoadingAssets(): void {
+    hud.setLoading(0);
+    loadSkyAssets((fraction) => hud.setLoading(fraction))
+      .then((assets) => {
+        catalogue = buildSkyCatalogue(assets.stars, assets.brightStars);
+        hud.describeAbout(assets.manifest);
+        renderer = createWebGlRenderer(
+          glCanvas,
+          catalogue,
+          assets.milkyWayImage,
+          useFallbackRenderer,
+        );
+        if (renderer === null) {
+          useFallbackRenderer();
+        }
+        hud.setLoading(null);
+        ready = true;
+        if (introActive) {
+          startIntroFlight();
+        }
+      })
+      .catch(() => hud.showLoadingError(LOAD_ERROR_MESSAGE, startLoadingAssets));
+  }
+  startLoadingAssets();
 
   requestAnimationFrame(loop);
 
