@@ -3,12 +3,18 @@ import { loadSkyAssets } from "./skyAssets";
 import {
   computeCameraBasis,
   DEFAULT_CAMERA,
+  cameraLookingAt,
   focalLength,
   type CameraBasis,
   type Viewport,
 } from "./skyCamera";
 import { buildSkyCatalogue, type SkyCatalogue } from "./skyCatalogue";
 import { buildFallbackStars, type FallbackStar } from "./skyFallback";
+import {
+  buildUserPosition,
+  USER_POSITION_VIEW_DISTANCE_PARSECS,
+  type UserPosition,
+} from "./skyCoordinates";
 import { createSkyHud, type SkyHud } from "./skyHud";
 import { attachSkyInteraction } from "./skyInteraction";
 import { formatScaleLabel, niceScaleLength } from "./skyMath";
@@ -34,6 +40,7 @@ export interface SkyView {
   endIntro(): void;
   restart(): void;
   flyToTarget(slug: string): void;
+  showUserPosition(rightAscensionText: string, declinationText: string): void;
 }
 
 const MAXIMUM_DEVICE_PIXEL_RATIO = 2;
@@ -76,6 +83,7 @@ export function createSkyView(options: SkyViewOptions): SkyView {
   let devicePixelRatio = 1;
   let basis: CameraBasis = computeCameraBasis(motion.camera, motion.look);
   let targetPositions = new Map<string, TargetScreenPosition>();
+  let userPosition: UserPosition | null = null;
   let hoveredSlug: string | null = null;
   let openCardSlug: string | null = null;
   let tourTimer: number | null = null;
@@ -306,6 +314,7 @@ export function createSkyView(options: SkyViewOptions): SkyView {
         topInset: viewport.width < NARROW_SCREEN_PIXELS ? TOP_INSET_NARROW : TOP_INSET_WIDE,
         fallbackStars,
         hideDecorations: introActive && renderer !== null,
+        userPosition,
       },
       devicePixelRatio,
     );
@@ -399,7 +408,24 @@ export function createSkyView(options: SkyViewOptions): SkyView {
       stopTour();
       selectTarget(slug, null);
     },
+    showUserPosition(rightAscensionText: string, declinationText: string): void {
+      userPosition = buildUserPosition(rightAscensionText, declinationText);
+      if (!userPosition) {
+        return;
+      }
+      stopTour();
+      closeCard();
+      hud.setSelectedChip(null);
+      motion.startFlight(
+        cameraLookingAt(userPosition.position, USER_POSITION_VIEW_DISTANCE_PARSECS),
+        TARGET_FLIGHT_MILLISECONDS,
+        performance.now(),
+        reducedMotion(),
+      );
+      hud.announce("Flew to your position");
+    },
     restart(): void {
+      userPosition = null;
       stopTour();
       closeCard();
       hud.hideFirstVisitHint();

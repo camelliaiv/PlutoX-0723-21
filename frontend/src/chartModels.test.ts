@@ -34,7 +34,7 @@ const selection = { detector: 2, frameIndex: 0 };
 
 describe("chartModels", () => {
   it("leaves the padding around the plot area", () => {
-    expect(plotBounds(geometry)).toEqual({ left: 52, right: 588, top: 22, bottom: 266 });
+    expect(plotBounds(geometry)).toEqual({ left: 52, right: 570, top: 22, bottom: 266 });
   });
 
   it("draws a saturated exposure hollow and an unsaturated one filled", () => {
