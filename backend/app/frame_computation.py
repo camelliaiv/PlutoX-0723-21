@@ -20,7 +20,7 @@ from app.frames_models import (
     SkyPosition,
 )
 from app.mirror_cutout import http_range_reader
-from app.spherex_archive import COLLECTION_TITLES
+from app.spherex_archive import COLLECTION_TITLES, SearchResponseReader
 from app.target_astrometry import TargetDescription, target_position_at
 
 DEFAULT_FRAME_SIZE_PIXELS = 32
@@ -75,7 +75,11 @@ def _sky_position(position: SkyCoord) -> SkyPosition:
 
 
 def compute_live_frames(
-    target_description: TargetDescription, detector: int, size: int, client: httpx.Client
+    target_description: TargetDescription,
+    detector: int,
+    size: int,
+    client: httpx.Client,
+    read_search_response: SearchResponseReader | None = None,
 ) -> tuple[FramesResponse, bool]:
     search_position = target_position_at(target_description, SURVEY_MIDPOINT_TIME)
     search = spherex_archive.search_releases(
@@ -83,6 +87,7 @@ def compute_live_frames(
         search_position.dec.deg,
         FRAME_SEARCH_RADIUS_DEGREES,
         spherex_archive.ARCHIVE_TIMEOUT_SECONDS,
+        read_search_response,
     )
     frame_set = build_epoch_frames(
         search.images,

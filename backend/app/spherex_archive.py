@@ -6,6 +6,7 @@ Uses the IVOA Simple Image Access v2 (SIA2) service.
 import io
 import os
 from collections import Counter
+from collections.abc import Callable
 from dataclasses import dataclass
 from enum import StrEnum
 from itertools import pairwise
@@ -158,6 +159,9 @@ def group_into_epochs(
     ]
 
 
+SearchResponseReader = Callable[[Collection, str], bytes]
+
+
 @dataclass(frozen=True)
 class ReleaseSearch:
     images: list[ObservationImage]
@@ -166,9 +170,21 @@ class ReleaseSearch:
 
 
 def search_releases(
-    right_ascension: float, declination: float, radius_degrees: float, timeout_seconds: float
+    right_ascension: float,
+    declination: float,
+    radius_degrees: float,
+    timeout_seconds: float,
+    read_search_response: SearchResponseReader | None = None,
 ) -> ReleaseSearch:
-    """Search every release; an observation present in several is kept once, from the first."""
+    """Search every release; an observation present in several is kept once, from the first.
+
+    By default each release is queried live; `read_search_response` can supply saved responses.
+    """
+    if read_search_response is None:
+
+        def read_search_response(collection: Collection, url: str) -> bytes:
+            return download_search_response(url, timeout_seconds)
+
     images: list[ObservationImage] = []
     release_by_mirror_url: dict[str, Collection] = {}
     unavailable_releases: dict[Collection, str] = {}
@@ -177,7 +193,7 @@ def search_releases(
     for collection in Collection:
         url = build_search_url(right_ascension, declination, radius_degrees, collection)
         try:
-            found_images = parse_images(download_search_response(url, timeout_seconds))
+            found_images = parse_images(read_search_response(collection, url))
         except ArchiveError as error:
             first_error = first_error or error
             unavailable_releases[collection] = error.message

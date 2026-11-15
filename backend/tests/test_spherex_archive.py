@@ -114,3 +114,18 @@ def test_unreachable_archive_becomes_bad_gateway(monkeypatch):
     with pytest.raises(ArchiveError) as raised:
         spherex_archive.download_search_response("https://example.org", timeout_seconds=1)
     assert raised.value.http_status == 502
+
+
+def test_release_search_can_use_saved_responses(barnard_star_search_response):
+    requested = []
+
+    def read_saved_response(collection, url):
+        requested.append(collection)
+        return barnard_star_search_response
+
+    search = spherex_archive.search_releases(
+        269.4465, 4.7668, 0.001, timeout_seconds=1, read_search_response=read_saved_response
+    )
+    assert requested == list(Collection)
+    assert len(search.images) == 6
+    assert search.unavailable_releases == {}

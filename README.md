@@ -37,8 +37,10 @@ cd backend
 ../.venv/Scripts/python -m app.precompute_frames --force
 ```
 
-Options: `--targets <slugs...>`, `--detectors <1..6...>`, `--size <pixels>` (default 32) and
-`--force` (recompute even when a valid cache file exists). A combination is cached only when both
+Options: `--targets <slugs...>`, `--detectors <1..6...>`, `--size <pixels>` (default 32),
+`--force` (recompute even when a valid cache file exists) and `--search-responses <directory>` (use saved
+IRSA search responses named `<target>_<collection>.xml` instead of querying IRSA; pixels are still read from
+the archive mirror). A combination is cached only when both
 releases answered and at least one frame was built; failed requests are retried up to five times,
 and the exit code is 0 only if every requested combination succeeded.
 
@@ -46,6 +48,14 @@ and the exit code is 0 only if every requested combination succeeded.
 The `Dockerfile` builds the frontend with Node and serves it together with the API from one FastAPI process
 (port `$PORT`, default 10000). `render.yaml` describes a Render web service that builds this image from the
 `develop` branch and checks `/api/health`.
+
+## Known limitations
+During the hackathon (14–15 November 2026) the NASA/IPAC Infrared Science Archive search (SIA2) and
+cutout services repeatedly returned HTTP 502/503 errors. PlutoX needs only one thing from that search:
+the list of SPHEREx exposures that cover a sky position. The image pixels themselves are read from the
+public AWS mirror of the archive, which stayed available. The frames of the five challenge targets were
+therefore computed from real archive search responses saved on 14 November 2026; exposures published
+after that date are not included.
 
 ## Tests
 ```bash

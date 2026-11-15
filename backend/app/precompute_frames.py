@@ -10,6 +10,7 @@ from collections.abc import Sequence
 from contextlib import contextmanager
 from dataclasses import dataclass
 from enum import StrEnum
+from pathlib import Path
 from time import monotonic, sleep
 
 import httpx
@@ -25,6 +26,7 @@ from app.frame_computation import (
 )
 from app.frames_models import FramesResponse
 from app.mirror_cutout import open_mirror_client
+from app.spherex_archive import COLLECTION_TITLES, Collection, SearchResponseReader
 from app.target_astrometry import CHALLENGE_TARGETS, CatalogueTarget
 
 DETECTORS = (1, 2, 3, 4, 5, 6)
@@ -98,17 +100,47 @@ def parse_arguments(arguments: Sequence[str] | None = None) -> argparse.Namespac
     parser.add_argument(
         "--force", action="store_true", help="Recompute even if a valid cache file exists"
     )
+    parser.add_argument(
+        "--search-responses",
+        type=Path,
+        metavar="DIRECTORY",
+        help=(
+            "Read saved IRSA search responses named <target>_<collection>.xml from this directory "
+            "instead of querying IRSA; pixels are still read from the archive mirror"
+        ),
+    )
     return parser.parse_args(arguments)
 
 
+def stored_search_response_reader(directory: Path, target: str) -> SearchResponseReader:
+    """Reader of saved search responses; a missing file makes that release unavailable."""
+
+    def read_search_response(collection: Collection, url: str) -> bytes:
+        path = directory / f"{target}_{collection.value}.xml"
+        try:
+            return path.read_bytes()
+        except OSError as error:
+            raise ArchiveError(
+                502, f"No saved search response for {COLLECTION_TITLES[collection]}."
+            ) from error
+
+    return read_search_response
+
+
 def compute_with_retries(
-    target: str, detector: int, size: int, client: httpx.Client
+    target: str,
+    detector: int,
+    size: int,
+    client: httpx.Client,
+    read_search_response: SearchResponseReader | None = None,
 ) -> tuple[FramesResponse | None, str]:
     """Complete frames of one combination, or None and the reason of the last failure."""
     description = CatalogueTarget(CHALLENGE_TARGETS[target])
     for attempt, wait_seconds in enumerate((*RETRY_WAIT_SECONDS, None)):
         try:
-            response, is_complete = compute_live_frames(description, detector, size, client)
+            response, is_complete = compute_live_frames(
+                description, detector, size, client, read_search_response
+            )
         except ArchiveError as error:
             reason = error.message
         else:
@@ -122,7 +154,12 @@ def compute_with_retries(
 
 
 def precompute_combination(
-    target: str, detector: int, size: int, force: bool, client: httpx.Client
+    target: str,
+    detector: int,
+    size: int,
+    force: bool,
+    client: httpx.Client,
+    read_search_response: SearchResponseReader | None = None,
 ) -> CombinationResult:
     started = monotonic()
     key = frame_cache.key_for_target(target, detector, size)
@@ -135,7 +172,7 @@ def precompute_combination(
             monotonic() - started,
             cached_response,
         )
-    response, reason = compute_with_retries(target, detector, size, client)
+    response, reason = compute_with_retries(target, detector, size, client, read_search_response)
     if response is None:
         return CombinationResult(
             target, detector, CombinationStatus.FAILED, monotonic() - started, failure_reason=reason
@@ -163,9 +200,14 @@ def main(arguments: Sequence[str] | None = None) -> int:
     started = monotonic()
     with _quiet_astropy_log(), open_mirror_client() as client:
         for target in options.targets:
+            read_search_response = (
+                stored_search_response_reader(options.search_responses, target)
+                if options.search_responses
+                else None
+            )
             for detector in options.detectors:
                 result = precompute_combination(
-                    target, detector, options.size, options.force, client
+                    target, detector, options.size, options.force, client, read_search_response
                 )
                 print(result.describe(), flush=True)
                 results.append(result)

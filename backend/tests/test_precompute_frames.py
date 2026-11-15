@@ -3,6 +3,7 @@ import pytest
 from app import frame_cache, precompute_frames
 from app.errors import ArchiveError
 from app.precompute_frames import CombinationStatus
+from app.spherex_archive import Collection
 from tests.test_frame_cache import synthetic_frames_response
 
 SINGLE_COMBINATION = ["--targets", "barnards_star", "--detectors", "5"]
@@ -32,7 +33,7 @@ def install_computation(monkeypatch, outcomes: list) -> list[tuple]:
     calls: list[tuple] = []
     remaining = list(outcomes)
 
-    def compute(description, detector, size, client):
+    def compute(description, detector, size, client, read_search_response=None):
         calls.append((description.entry.name, detector, size))
         outcome = remaining.pop(0)
         if isinstance(outcome, Exception):
@@ -134,3 +135,27 @@ def test_force_recomputes_even_when_a_valid_cache_file_exists(monkeypatch, waits
     calls = install_computation(monkeypatch, [(synthetic_frames_response(), True)])
     assert precompute_frames.main([*SINGLE_COMBINATION, "--force"]) == 0
     assert len(calls) == 1
+
+
+def test_saved_search_responses_are_read_per_release(tmp_path):
+    (tmp_path / "barnards_star_spherex_dr1.xml").write_bytes(b"synthetic data release 1 response")
+    read_search_response = precompute_frames.stored_search_response_reader(
+        tmp_path, "barnards_star"
+    )
+    assert (
+        read_search_response(Collection.DATA_RELEASE_1, "unused")
+        == b"synthetic data release 1 response"
+    )
+
+
+def test_a_missing_saved_search_response_makes_that_release_unavailable(tmp_path):
+    read_search_response = precompute_frames.stored_search_response_reader(
+        tmp_path, "barnards_star"
+    )
+    with pytest.raises(ArchiveError, match="No saved search response"):
+        read_search_response(Collection.QUICK_RELEASE_3, "unused")
+
+
+def test_search_responses_directory_is_parsed(tmp_path):
+    options = precompute_frames.parse_arguments(["--search-responses", str(tmp_path)])
+    assert options.search_responses == tmp_path
