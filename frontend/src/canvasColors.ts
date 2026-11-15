@@ -1,0 +1,11 @@
+export const CANVAS_BACKGROUND_COLOR = "#000000";
+export const MARKER_COLOR = "#ff8a1f";
+export const MARKER_LABEL_COLOR = "#ffb36b";
+export const OUTLINE_COLOR = "#000000";
+export const ANNOTATION_COLOR = "#ffffff";
+export const PIXEL_HIGHLIGHT_COLOR = "#ffffff";
+export const CHART_TEXT_COLOR = "#9fb0d0";
+export const CHART_GRID_COLOR = "#22305a";
+export const CHART_HIGHLIGHT_COLOR = "#3da5ff";
+export const CHART_NEUTRAL_BAND_COLOR = "#ffffff";
+export const CHART_FOCUS_COLOR = "#ffd166";

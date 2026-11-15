@@ -1,0 +1,109 @@
+{
+  "format_version": 1,
+  "stars": {
+    "file": "stars.bin",
+    "encoding": "little-endian float32, records of five values stored one after another",
+    "count": 107539,
+    "record": [
+      {
+        "name": "right_ascension",
+        "unit": "degree",
+        "description": "ICRS right ascension"
+      },
+      {
+        "name": "declination",
+        "unit": "degree",
+        "description": "ICRS declination"
+      },
+      {
+        "name": "distance",
+        "unit": "parsec",
+        "description": "-1 when there is no reliable distance"
+      },
+      {
+        "name": "magnitude",
+        "unit": "mag",
+        "description": "Gaia G magnitude"
+      },
+      {
+        "name": "colour_index",
+        "unit": "mag",
+        "description": "Gaia BP minus RP colour; 99 when there is none"
+      }
+    ],
+    "bright_gaia_count": 106363,
+    "nearby_count": 1462,
+    "selection": [
+      "phot_g_mean_mag<8.5 (106363 stars)",
+      "parallax>60 and parallax_over_error>10, merged without duplicates (1462 stars)"
+    ]
+  },
+  "bright_stars": {
+    "file": "bright_stars.bin",
+    "encoding": "little-endian float32, records of five values stored one after another",
+    "count": 68,
+    "catalogue_count": 480,
+    "skipped_duplicate_count": 412,
+    "record": [
+      {
+        "name": "right_ascension",
+        "unit": "degree",
+        "description": "ICRS right ascension"
+      },
+      {
+        "name": "declination",
+        "unit": "degree",
+        "description": "ICRS declination"
+      },
+      {
+        "name": "distance",
+        "unit": "parsec",
+        "description": "-1 when there is no reliable distance"
+      },
+      {
+        "name": "magnitude",
+        "unit": "mag",
+        "description": "Hipparcos Hp magnitude"
+      },
+      {
+        "name": "colour_index",
+        "unit": "mag",
+        "description": "Hipparcos B minus V colour; 99 when there is none"
+      }
+    ],
+    "epoch": "1991.25",
+    "deduplication": "Skipped when a Gaia star brighter than G 5 lies within 2 arcminutes"
+  },
+  "milky_way": {
+    "file": "milky_way_4k.jpg",
+    "width": 4096,
+    "height": 2048,
+    "projection": "equirectangular",
+    "orientation": "Galactic coordinates with the galactic centre in the middle and the longitude increasing to the left, verified with the Magellanic Clouds",
+    "processing": "Resampled to 4096 by 2048 pixels and saved as JPEG quality 90; the colours are not modified"
+  },
+  "sources": {
+    "gaia_bright": {
+      "description": "IRSA Gator gaia_dr3_source, phot_g_mean_mag<8.5, columns ra, dec, parallax, phot_g_mean_mag, bp_rp",
+      "retrieved": "2026-11-15 00:00:12"
+    },
+    "gaia_nearby": {
+      "description": "IRSA Gator gaia_dr3_source, parallax>60 and parallax_over_error>10, columns ra, dec, parallax, phot_g_mean_mag, bp_rp",
+      "retrieved": "2026-11-14 23:44:03"
+    },
+    "hipparcos": {
+      "description": "NASA HEASARC TAP: SELECT hip_number, ra, dec, parallax, hip_mag, bv_color FROM hipnewcat WHERE hip_mag < 4.0",
+      "retrieved": "2026-11-15"
+    },
+    "milky_way": {
+      "description": "ESA Gaia EDR3 colour map, https://sci.esa.int/documents/33580/35361/Gaia_EDR3_flux_cartesian_4k.png/4648ec09-6c63-47a5-d0da-3ab3e0b42afe?version=1.0&t=1606986362680&download=true",
+      "retrieved": "2026-11-15"
+    }
+  },
+  "credits": {
+    "milky_way": "ESA/Gaia/DPAC; CC BY-SA 3.0 IGO. Acknowledgement: A. Moitinho",
+    "milky_way_licence": "https://creativecommons.org/licenses/by-sa/3.0/igo/",
+    "gaia": "Gaia DR3 star data (ESA/Gaia/DPAC), retrieved through NASA/IPAC IRSA",
+    "hipparcos": "Hipparcos, the New Reduction (van Leeuwen 2007), ESA, via NASA HEASARC table hipnewcat"
+  }
+}

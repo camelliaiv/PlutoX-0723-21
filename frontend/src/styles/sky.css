@@ -1,0 +1,446 @@
+.glass-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 34px;
+  padding: 7px 12px;
+  background: #101a33d9;
+  color: var(--color-text);
+  border: 1px solid var(--color-navy-600);
+  border-radius: var(--radius-small);
+  font-weight: 400;
+  line-height: 1.2;
+  transition:
+    background var(--motion-duration),
+    border-color var(--motion-duration),
+    box-shadow var(--motion-duration),
+    transform 0.1s;
+}
+
+.glass-button:hover {
+  background: #16254a;
+  border-color: var(--color-electric-blue);
+  box-shadow: 0 0 18px #3da5ff30;
+}
+
+.glass-button:active {
+  background: var(--color-electric-blue-strong);
+  transform: translateY(1px);
+}
+
+.glass-button[aria-pressed="true"],
+.glass-button[aria-expanded="true"] {
+  background: var(--color-glass-selected);
+  border-color: var(--color-electric-blue);
+  box-shadow: inset 0 0 0 1px #3da5ff55;
+}
+
+.glass-button-quiet {
+  background: transparent;
+}
+
+.glass-button-primary {
+  background: linear-gradient(180deg, #ff9a3c, #ff7a00);
+  color: #1a0d00;
+  border-color: #ffb36b;
+  font-weight: 650;
+}
+
+.glass-button-primary:hover {
+  background: linear-gradient(180deg, #ffa753, #ff8a1f);
+  border-color: #ffb36b;
+  box-shadow: 0 0 26px #ff8a1f77;
+}
+
+@media (pointer: coarse) {
+  .glass-button {
+    min-height: var(--touch-target);
+  }
+}
+
+.sky-hud {
+  position: fixed;
+  inset: 0;
+  z-index: 10;
+  pointer-events: none;
+}
+
+.sky-hud > * {
+  pointer-events: auto;
+}
+
+.sky-chips {
+  position: absolute;
+  top: calc(var(--bar-height) + 10px);
+  left: var(--side-gutter);
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  max-width: min(560px, calc(100% - 32px));
+}
+
+.target-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 0;
+  padding: 4px 10px;
+  background: #101a33cc;
+  color: var(--color-text);
+  border: 1px solid var(--color-navy-600);
+  border-radius: 99px;
+  font-size: 0.82rem;
+  font-weight: 400;
+  white-space: nowrap;
+  transition:
+    border-color var(--motion-duration),
+    box-shadow var(--motion-duration);
+}
+
+.target-chip:hover {
+  border-color: var(--color-orange);
+  box-shadow: 0 0 14px #ff8a1f44;
+}
+
+.target-chip[aria-pressed="true"] {
+  background: #2a1a0a;
+  border-color: var(--color-orange);
+}
+
+.target-chip small {
+  color: var(--color-text-muted);
+  font-family: var(--font-mono);
+}
+
+.target-chip-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  background: var(--color-orange);
+  border-radius: 50%;
+}
+
+.sky-tour-bar {
+  position: absolute;
+  bottom: 16px;
+  left: var(--side-gutter);
+  display: flex;
+  gap: var(--space-2);
+}
+
+.sky-hud > .sky-scale {
+  position: absolute;
+  bottom: 18px;
+  left: 50%;
+  color: var(--color-text-muted);
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  text-align: center;
+  transform: translateX(-50%);
+  pointer-events: none;
+}
+
+.sky-scale i {
+  display: block;
+  height: 6px;
+  margin: 4px auto 0;
+  border: 1px solid #9fb0d0aa;
+  border-top: 0;
+}
+
+.sky-hud > .sky-hint {
+  position: absolute;
+  right: var(--side-gutter);
+  bottom: 16px;
+  max-width: 260px;
+  color: var(--color-text-muted);
+  font-size: 0.82rem;
+  text-align: right;
+  pointer-events: none;
+}
+
+.sky-readout {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+.sky-hud > .sky-first-visit-hint {
+  position: absolute;
+  bottom: 74px;
+  left: 50%;
+  max-width: calc(100% - 32px);
+  padding: 9px 16px;
+  border-radius: 99px;
+  font-size: 0.92rem;
+  text-align: center;
+  text-shadow: 0 0 8px #000;
+  opacity: 0;
+  transform: translateX(-50%);
+  transition: opacity 1s;
+  pointer-events: none;
+}
+
+.sky-hud > .sky-first-visit-hint-visible {
+  opacity: 1;
+}
+
+.sky-credit {
+  position: absolute;
+  bottom: 3px;
+  left: 50%;
+  max-width: calc(100% - 32px);
+  color: #9fb0d0aa;
+  font-size: 10px;
+  line-height: 1.3;
+  text-align: center;
+  white-space: nowrap;
+  transform: translateX(-50%);
+}
+
+.sky-credit button {
+  min-height: 0;
+  padding: 0 2px;
+  background: none;
+  color: #9fb0d0dd;
+  font-size: 10px;
+  font-weight: 400;
+  text-decoration: underline;
+}
+
+.sky-card {
+  position: absolute;
+  bottom: 64px;
+  left: var(--side-gutter);
+  width: min(360px, calc(100% - 32px));
+  padding: 18px 18px 16px;
+  animation: sky-card-rise 0.45s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.sky-card h2 {
+  margin: 0 0 2px;
+  font-size: 1.3rem;
+}
+
+.sky-card-source {
+  color: var(--color-text-muted);
+  font-size: 0.82rem;
+}
+
+.sky-card dl {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 4px 14px;
+  margin: 12px 0;
+  font-size: 0.9rem;
+}
+
+.sky-card dt {
+  color: var(--color-text-muted);
+}
+
+.sky-card dd {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: 0.82rem;
+}
+
+.sky-card-note {
+  margin: 0 0 12px;
+  color: var(--color-text-muted);
+  font-size: 0.84rem;
+}
+
+.card-close {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  min-height: 30px;
+  padding: 2px 9px;
+}
+
+.sky-about {
+  position: absolute;
+  bottom: 30px;
+  left: 50%;
+  width: min(520px, calc(100% - 32px));
+  max-height: 56vh;
+  padding: 14px 16px;
+  overflow: auto;
+  font-size: 0.84rem;
+  transform: translateX(-50%);
+}
+
+.sky-about h3 {
+  margin: 0 0 6px;
+  font-size: 0.95rem;
+}
+
+.sky-about p {
+  margin: 6px 0;
+}
+
+.sky-about-credit {
+  color: var(--color-text-muted);
+}
+
+.sky-loading {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  min-width: 16rem;
+  text-align: center;
+  transform: translate(-50%, -50%);
+}
+
+.sky-loading p {
+  margin: 0;
+}
+
+.sky-loading progress {
+  width: 100%;
+  accent-color: var(--color-electric-blue);
+}
+
+.sky-hud > .sky-tooltip {
+  position: fixed;
+  z-index: 80;
+  max-width: 280px;
+  padding: 7px 10px;
+  background: #05070fea;
+  border: 1px solid var(--color-navy-600);
+  border-radius: var(--radius-small);
+  font-size: 0.8rem;
+  opacity: 0;
+  transform: translate(12px, 12px);
+  transition: opacity 0.12s;
+  pointer-events: none;
+}
+
+.sky-hud > .sky-tooltip-visible {
+  opacity: 1;
+}
+
+.sky-tooltip-mono {
+  font-family: var(--font-mono);
+}
+
+.sky-tooltip-note {
+  color: var(--color-text-muted);
+}
+
+.sheet {
+  position: fixed;
+  top: calc(var(--bar-height) + 10px);
+  right: var(--side-gutter);
+  bottom: 16px;
+  z-index: 40;
+  width: min(420px, calc(100% - 32px));
+  padding: 18px;
+  overflow: auto;
+  visibility: hidden;
+  opacity: 0;
+  transform: translateX(24px);
+  transition:
+    transform 0.35s cubic-bezier(0.2, 0.8, 0.2, 1),
+    opacity 0.3s,
+    visibility 0.3s;
+  pointer-events: auto;
+}
+
+.sheet-open {
+  visibility: visible;
+  opacity: 1;
+  transform: none;
+}
+
+.sheet h2 {
+  margin: 0 0 4px;
+  font-size: 1.2rem;
+}
+
+.sheet p {
+  color: var(--color-text-muted);
+}
+
+@keyframes sky-card-rise {
+  from {
+    opacity: 0;
+    transform: translateY(14px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@media (max-width: 760px) {
+  .sky-credit {
+    bottom: 2px;
+    width: calc(100% - 32px);
+    white-space: normal;
+  }
+
+  .sky-about {
+    bottom: 46px;
+  }
+
+  .sky-hud > .sky-first-visit-hint {
+    top: calc(var(--bar-height) + 96px);
+    bottom: auto;
+    border-radius: var(--radius-medium);
+    font-size: 0.84rem;
+  }
+
+  .sky-card {
+    right: 0;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    padding-bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+    border-radius: var(--radius-large) var(--radius-large) 0 0;
+  }
+
+  .sky-tour-bar {
+    top: calc(var(--bar-height) + 54px);
+    bottom: auto;
+  }
+
+  .sky-hud > .sky-hint {
+    display: none;
+  }
+
+  .sky-hud > .sky-scale {
+    top: calc(var(--bar-height) + 54px);
+    right: var(--side-gutter);
+    bottom: auto;
+    left: auto;
+    transform: none;
+  }
+
+  .sky-chips {
+    flex-wrap: nowrap;
+    max-width: calc(100% - 32px);
+    padding-bottom: 4px;
+    overflow-x: auto;
+  }
+
+  .sheet {
+    top: auto;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 68vh;
+    border-radius: var(--radius-large) var(--radius-large) 0 0;
+    transform: translateY(30px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sky-card {
+    animation: none;
+  }
+}

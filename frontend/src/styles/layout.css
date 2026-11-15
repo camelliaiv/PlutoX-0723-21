@@ -1,0 +1,121 @@
+.sky-gl,
+.sky-overlay {
+  position: fixed;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+  transition:
+    opacity 0.6s,
+    filter 0.6s;
+}
+
+.sky-gl {
+  z-index: 0;
+  background: #03050b;
+  pointer-events: none;
+}
+
+.sky-overlay {
+  z-index: 1;
+  touch-action: none;
+  cursor: grab;
+}
+
+.sky-overlay:focus-visible {
+  outline-offset: -4px;
+}
+
+.sky-canvas-dragging {
+  cursor: grabbing;
+}
+
+.sky-canvas-hovering {
+  cursor: pointer;
+}
+
+body:not([data-view="sky"]) .sky-gl,
+body:not([data-view="sky"]) .sky-overlay {
+  opacity: 0.5;
+  filter: blur(1.5px);
+  pointer-events: none;
+}
+
+.sky-veil {
+  position: fixed;
+  inset: 0;
+  z-index: 2;
+  background: radial-gradient(ellipse at 50% 45%, transparent 40%, #05070fbf 100%);
+  pointer-events: none;
+}
+
+body:not([data-view="sky"]) .sky-veil {
+  background: radial-gradient(ellipse at 50% 40%, #0a102059, #05070fd9);
+}
+
+body[data-view="sky"] {
+  overflow: hidden;
+}
+
+.app-shell {
+  position: relative;
+  z-index: 3;
+  min-height: 100vh;
+  pointer-events: none;
+  transition: opacity var(--welcome-fade-duration, 600ms) ease;
+}
+
+.app-shell[inert] {
+  opacity: 0;
+}
+
+.app-header {
+  position: fixed;
+  top: 0;
+  right: 0;
+  left: 0;
+  z-index: 30;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 14px;
+  padding: calc(10px + env(safe-area-inset-top, 0px)) var(--side-gutter) 8px;
+  pointer-events: none;
+}
+
+.app-header > * {
+  pointer-events: auto;
+}
+
+.header-actions {
+  display: flex;
+  gap: var(--space-2);
+}
+
+.app-main {
+  max-width: var(--content-width);
+  margin: 0 auto;
+  padding-block: calc(var(--bar-height) + 14px) var(--space-7);
+  padding-inline: var(--side-gutter);
+}
+
+.view-panel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  pointer-events: auto;
+}
+
+.view-panel-sky {
+  pointer-events: none;
+}
+
+.view-panel > h2 {
+  margin-bottom: 0;
+}
+
+.placeholder-panel {
+  max-width: 38rem;
+  margin: var(--space-6) auto;
+  text-align: center;
+}

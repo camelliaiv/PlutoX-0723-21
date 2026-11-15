@@ -1,0 +1,375 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="color-scheme" content="dark" />
+    <meta
+      name="description"
+      content="Enter sky coordinates and explore how that patch of sky changes across real NASA SPHEREx observations."
+    />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <title>PlutoX 0723+21</title>
+  </head>
+  <body>
+    <canvas id="sky-gl" class="sky-gl" aria-hidden="true"></canvas>
+    <canvas
+      id="sky-overlay"
+      class="sky-overlay"
+      tabindex="0"
+      aria-label="Interactive 3D map of real Gaia stars around the Sun with the five challenge targets. Drag to rotate, scroll to zoom, arrow keys rotate, plus and minus zoom. Use the target buttons to fly to a target."
+    ></canvas>
+    <div class="sky-veil" aria-hidden="true"></div>
+    <div id="app-shell" class="app-shell">
+      <header class="app-header">
+        <button
+          id="logo-button"
+          class="logo-button"
+          type="button"
+          aria-label="PlutoX 0723+21: restart from the beginning"
+          title="Restart"
+        ></button>
+        <div id="view-tabs" class="view-tabs" role="tablist" aria-label="View">
+          <button
+            id="tab-sky"
+            class="view-tab"
+            role="tab"
+            type="button"
+            data-view="sky"
+            aria-controls="view-sky"
+            aria-selected="true"
+          >
+            Sky
+          </button>
+          <span class="view-tab-separator" aria-hidden="true">&#8644;</span>
+          <button
+            id="tab-time"
+            class="view-tab"
+            role="tab"
+            type="button"
+            data-view="time"
+            aria-controls="view-time"
+            aria-selected="false"
+            tabindex="-1"
+          >
+            Time machine
+          </button>
+          <span class="view-tab-separator" aria-hidden="true">&#8644;</span>
+          <button
+            id="tab-pixel"
+            class="view-tab"
+            role="tab"
+            type="button"
+            data-view="pixel"
+            aria-controls="view-pixel"
+            aria-selected="false"
+            tabindex="-1"
+          >
+            Pixel scale
+          </button>
+        </div>
+        <div class="header-actions">
+          <button
+            id="guide-button"
+            class="glass-button"
+            type="button"
+            aria-expanded="false"
+            aria-controls="sheet-guide"
+          >
+            <span aria-hidden="true">&#10022;</span> <span class="button-text">Guide</span>
+          </button>
+          <button
+            id="challenge-button"
+            class="glass-button"
+            type="button"
+            aria-expanded="false"
+            aria-controls="sheet-challenge"
+          >
+            <span aria-hidden="true">&#9745;</span> <span class="button-text">Challenge</span>
+          </button>
+        </div>
+      </header>
+      <main class="app-main">
+        <h1 class="visually-hidden">PlutoX 0723+21</h1>
+        <section
+          id="view-sky"
+          class="view-panel view-panel-sky"
+          role="tabpanel"
+          aria-labelledby="tab-sky"
+        ></section>
+        <section
+          id="view-time"
+          class="view-panel view-panel-time"
+          role="tabpanel"
+          aria-labelledby="tab-time"
+          tabindex="0"
+          hidden
+        >
+          <div class="time-head glass-panel">
+            <label class="visually-hidden" for="target-select">Target</label>
+            <select id="target-select" name="target"></select>
+            <h2 id="time-title" class="time-title">Time machine</h2>
+            <form id="search-form" class="coordinate-form">
+              <label>
+                <span class="visually-hidden">Right ascension (RA)</span>
+                <input
+                  id="right-ascension-input"
+                  name="ra"
+                  autocomplete="off"
+                  placeholder="RA: 269.4465 or 17h57m47s"
+                  required
+                />
+              </label>
+              <label>
+                <span class="visually-hidden">Declination (Dec)</span>
+                <input
+                  id="declination-input"
+                  name="dec"
+                  autocomplete="off"
+                  placeholder="Dec: 4.7668 or +04d46m00s"
+                  required
+                />
+              </label>
+              <button id="search-button" class="glass-button glass-button-primary" type="submit">
+                Search
+              </button>
+            </form>
+            <p id="time-subtitle" class="time-subtitle"></p>
+          </div>
+          <p id="frames-status" class="status" aria-live="polite"></p>
+          <div id="time-grid" class="time-grid" hidden>
+            <nav id="wavelength-rail" class="rail glass-panel" aria-label="Wavelength detectors">
+              <h3 class="panel-heading">Wavelength &times; time</h3>
+            </nav>
+            <div class="time-stage">
+              <div id="saturation-notice" class="notice" role="status" hidden></div>
+              <div id="ring-frame" class="ring-frame">
+                <svg viewBox="0 11 100 78" aria-hidden="true" focusable="false">
+                  <circle id="ring-blue" class="time-ring time-ring-blue" cx="40" cy="50" r="38" />
+                  <circle
+                    id="ring-orange"
+                    class="time-ring time-ring-orange"
+                    cx="60"
+                    cy="50"
+                    r="38"
+                  />
+                </svg>
+                <canvas id="frame-canvas" tabindex="0" role="img"></canvas>
+                <p id="frame-label" class="frame-label"></p>
+              </div>
+              <div id="frame-legend" class="frame-legend"></div>
+              <div id="player-controls" class="player-controls glass-panel">
+                <div class="control-group">
+                  <button
+                    id="previous-button"
+                    class="glass-button"
+                    type="button"
+                    aria-label="Previous epoch"
+                  >
+                    &#9664;
+                  </button>
+                  <button
+                    id="play-button"
+                    class="glass-button glass-button-primary"
+                    type="button"
+                    aria-pressed="false"
+                  >
+                    &#9654; Blink
+                  </button>
+                  <button
+                    id="next-button"
+                    class="glass-button"
+                    type="button"
+                    aria-label="Next epoch"
+                  >
+                    &#9654;
+                  </button>
+                  <label class="visually-hidden" for="speed-select">Blink speed</label>
+                  <select id="speed-select" class="compact-select"></select>
+                </div>
+                <div
+                  id="mode-group"
+                  class="segmented-control"
+                  role="group"
+                  aria-label="Display mode"
+                >
+                  <button type="button" data-value="frame" aria-pressed="true">Frame</button>
+                  <button type="button" data-value="difference" aria-pressed="false">
+                    Difference
+                  </button>
+                  <button type="button" data-value="stack" aria-pressed="false">Stack</button>
+                </div>
+                <div
+                  id="color-map-group"
+                  class="segmented-control"
+                  role="group"
+                  aria-label="Colour map"
+                >
+                  <button type="button" data-value="inferno" aria-pressed="true">Inferno</button>
+                  <button type="button" data-value="gray" aria-pressed="false">Gray</button>
+                </div>
+                <div id="stretch-group" class="segmented-control" role="group" aria-label="Stretch">
+                  <button type="button" data-value="asinh" aria-pressed="true">asinh</button>
+                  <button type="button" data-value="linear" aria-pressed="false">linear</button>
+                </div>
+                <div class="control-group">
+                  <button
+                    id="zoom-out-button"
+                    class="glass-button"
+                    type="button"
+                    aria-label="Zoom out"
+                  >
+                    &minus;
+                  </button>
+                  <span id="zoom-value" class="zoom-value" aria-live="polite">1&times;</span>
+                  <button
+                    id="zoom-in-button"
+                    class="glass-button"
+                    type="button"
+                    aria-label="Zoom in"
+                  >
+                    +
+                  </button>
+                </div>
+                <div class="control-group" role="group" aria-label="Overlays">
+                  <button id="marker-toggle" class="target-chip" type="button" aria-pressed="true">
+                    Predicted position
+                  </button>
+                  <button id="track-toggle" class="target-chip" type="button" aria-pressed="true">
+                    Track
+                  </button>
+                  <button
+                    id="saturation-toggle"
+                    class="target-chip"
+                    type="button"
+                    aria-pressed="false"
+                  >
+                    Tint saturated
+                  </button>
+                </div>
+              </div>
+              <p id="pixel-readout" class="pixel-readout">Hover a pixel to inspect it.</p>
+              <div id="frame-notices" class="notices"></div>
+              <p class="legend">
+                North is up and east is left. Grey-green pixels have no data. Keyboard: Space
+                blinks, arrows step, 1 2 3 modes, + - zoom, T track, M marker, C colour map, S
+                saturated tint.
+              </p>
+              <div id="filmstrip" class="filmstrip glass-panel"></div>
+              <p id="frame-source" class="citation"></p>
+              <p id="frame-reference" class="citation"></p>
+            </div>
+            <aside id="target-facts" class="facts glass-panel" aria-label="Target facts"></aside>
+          </div>
+        </section>
+        <section
+          id="view-pixel"
+          class="view-panel"
+          role="tabpanel"
+          aria-labelledby="tab-pixel"
+          tabindex="0"
+          hidden
+        >
+          <div class="time-head glass-panel">
+            <label class="visually-hidden" for="pixel-target-select">Target</label>
+            <select id="pixel-target-select" name="pixel-target"></select>
+            <h2 id="pixel-title" class="time-title">Pixel scale</h2>
+            <p id="pixel-subtitle" class="time-subtitle"></p>
+          </div>
+          <p id="pixel-status" class="status" aria-live="polite"></p>
+          <div id="pixel-content" class="pixel-content" hidden>
+            <div class="pixel-selection glass-panel">
+              <p id="pixel-selection-text" class="pixel-selection-text" aria-live="polite"></p>
+              <button
+                id="pixel-open-button"
+                class="glass-button glass-button-primary"
+                type="button"
+              >
+                Show this frame in the Time machine
+              </button>
+            </div>
+            <section class="chart-pane glass-panel" aria-labelledby="spectrum-heading">
+              <div class="chart-head">
+                <h3 id="spectrum-heading" class="panel-heading">Spectrum · all six detectors</h3>
+                <button
+                  id="logarithmic-toggle"
+                  class="target-chip"
+                  type="button"
+                  aria-pressed="false"
+                >
+                  Logarithmic flux axis
+                </button>
+                <div id="epoch-legend" class="chart-legend"></div>
+              </div>
+              <div id="spectrum-chart"></div>
+              <p id="spectrum-caption" class="chart-caption"></p>
+            </section>
+            <section class="chart-pane glass-panel" aria-labelledby="light-curve-heading">
+              <div class="chart-head">
+                <h3 id="light-curve-heading" class="panel-heading">Light curve</h3>
+              </div>
+              <div id="light-curve-chart"></div>
+              <p id="light-curve-caption" class="chart-caption"></p>
+            </section>
+            <section class="chart-pane glass-panel" aria-labelledby="matrix-heading">
+              <div class="chart-head">
+                <h3 id="matrix-heading" class="panel-heading">Time × wavelength</h3>
+              </div>
+              <div id="time-matrix" class="time-matrix"></div>
+              <p class="chart-caption">
+                Each cell is a real frame: one epoch (row) at one detector (column). Select a cell
+                to choose that detector and epoch, then open it in the Time machine.
+              </p>
+            </section>
+          </div>
+        </section>
+      </main>
+      <aside id="sheet-guide" class="sheet glass-panel" aria-label="Guide">
+        <button
+          class="glass-button card-close"
+          type="button"
+          data-close-sheet="sheet-guide"
+          aria-label="Close guide"
+        >
+          &times;
+        </button>
+        <h2>Guide</h2>
+        <div id="guide-target" class="guide-target mono"></div>
+        <p class="guide-intro">
+          Answers are computed from the data loaded in this page. Citations jump the view. The guide
+          never claims a discovery.
+        </p>
+        <div
+          id="guide-questions"
+          class="guide-questions"
+          role="group"
+          aria-label="Guide questions"
+        ></div>
+        <div id="guide-answer" class="guide-answer" aria-live="polite">Pick a question.</div>
+      </aside>
+      <aside id="sheet-challenge" class="sheet glass-panel" aria-label="Challenge">
+        <button
+          class="glass-button card-close"
+          type="button"
+          data-close-sheet="sheet-challenge"
+          aria-label="Close challenge checklist"
+        >
+          &times;
+        </button>
+        <h2>How PlutoX meets the challenge</h2>
+        <p id="challenge-summary" class="challenge-summary"></p>
+        <p id="challenge-message" class="challenge-message" role="status"></p>
+        <ul id="challenge-list" class="challenge-list"></ul>
+      </aside>
+    </div>
+    <div
+      id="welcome"
+      class="welcome"
+      role="dialog"
+      aria-modal="true"
+      aria-label="Welcome"
+      hidden
+    ></div>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>

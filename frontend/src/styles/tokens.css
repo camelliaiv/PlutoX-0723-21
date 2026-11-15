@@ -1,0 +1,62 @@
+:root {
+  color-scheme: dark;
+
+  --color-space-black: #05070f;
+  --color-navy-900: #0a1020;
+  --color-navy-800: #101a33;
+  --color-navy-600: #22305a;
+  --color-text: #e8eefc;
+  --color-text-muted: #9fb0d0;
+  --color-electric-blue: #3da5ff;
+  --color-electric-blue-strong: #1b6fe0;
+  --color-orange: #ff8a1f;
+  --color-orange-soft: #ff8a1f66;
+  --color-error: #ff8b80;
+  --color-warning: #f2cc60;
+  --color-focus-ring: #ffd166;
+  --color-missing-pixel: #3a4a52;
+  --color-glass: #0a1020a8;
+  --color-glass-selected: #12306a;
+
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.5rem;
+  --space-6: 2rem;
+  --space-7: 3rem;
+  --space-8: 4rem;
+
+  --radius-small: 6px;
+  --radius-medium: 12px;
+  --radius-large: 20px;
+
+  --shadow-glow: 0 0 0 1px #22305a, 0 8px 32px #3da5ff22;
+
+  --font-body: system-ui, "Segoe UI", Roboto, sans-serif;
+  --font-mono: ui-monospace, "Cascadia Mono", Menlo, monospace;
+  --font-display: "Orbitron", system-ui, sans-serif;
+
+  --font-size-small: 0.875rem;
+  --font-size-base: 1rem;
+  --font-size-large: 1.25rem;
+  --font-size-title: clamp(2rem, 6vw, 3.5rem);
+
+  --touch-target: 2.75rem;
+  --content-width: 72rem;
+  --side-gutter: max(1rem, env(safe-area-inset-left, 0px));
+  --motion-duration: 180ms;
+  --bar-height: 64px;
+}
+
+@media (max-width: 760px) {
+  :root {
+    --bar-height: 108px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --motion-duration: 0ms;
+  }
+}
