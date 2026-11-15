@@ -180,3 +180,47 @@ def test_saturation_is_shown_not_hidden(monkeypatch):
     assert frame.saturated_fraction[0, 0] == pytest.approx(0.0)
     assert frame.coverage[middle, middle] == 2
     assert np.isfinite(frame.image[middle, middle])
+
+
+def test_every_used_exposure_is_measured_and_sorted_by_time(monkeypatch):
+    frame_set = build_frames(two_epoch_images()[::-1], monkeypatch)
+    times = [measurement.modified_julian_date for measurement in frame_set.exposures]
+    assert len(times) == 4
+    assert times == sorted(times)
+    assert {measurement.epoch_number for measurement in frame_set.exposures} == {1, 2}
+    assert all(measurement.flux_millijansky > 0 for measurement in frame_set.exposures)
+    assert {measurement.observation_id for measurement in frame_set.exposures} == {
+        "epoch_one_a",
+        "epoch_one_b",
+        "epoch_two_a",
+        "epoch_two_b",
+    }
+
+
+def test_skipped_exposures_are_not_measured(monkeypatch):
+    frame_set = build_frames(
+        two_epoch_images(), monkeypatch, outside_observation_ids=frozenset({"epoch_one_b"})
+    )
+    assert len(frame_set.exposures) == 3
+
+
+def test_predicted_position_of_a_fixed_target_is_the_grid_center(monkeypatch):
+    frame_set = build_frames(two_epoch_images(), monkeypatch)
+    middle = (GRID_SIZE - 1) / 2
+    for frame in frame_set.frames:
+        assert frame.predicted_position.column == pytest.approx(middle, abs=1e-6)
+        assert frame.predicted_position.row == pytest.approx(middle, abs=1e-6)
+        assert frame.predicted_position.right_ascension == pytest.approx(SYNTHETIC_STAR.ra.deg)
+
+
+def test_a_position_north_of_the_center_lands_that_many_rows_higher():
+    center = SkyCoord(10.0 * units.deg, 20.0 * units.deg)
+    grid = epoch_coadd.build_output_grid(center, GRID_SIZE)
+    north = center.directional_offset_by(0 * units.deg, 3 * 6.15 * units.arcsec)
+    east = center.directional_offset_by(90 * units.deg, 2 * 6.15 * units.arcsec)
+    middle = (GRID_SIZE - 1) / 2
+    north_position = epoch_coadd.predicted_position_on_grid(grid, north)
+    east_position = epoch_coadd.predicted_position_on_grid(grid, east)
+    assert north_position.row == pytest.approx(middle + 3, abs=1e-3)
+    assert north_position.column == pytest.approx(middle, abs=1e-3)
+    assert east_position.column == pytest.approx(middle - 2, abs=1e-3)

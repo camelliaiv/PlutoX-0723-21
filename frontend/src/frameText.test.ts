@@ -23,6 +23,7 @@ const frame: Frame = {
   variance: [[1, null]],
   coverage: [[1, 0]],
   saturated_fraction: [[0, null]],
+  predicted_position: { column: 0, row: 0, right_ascension: 0, declination: 0 },
 };
 
 describe("frameText", () => {

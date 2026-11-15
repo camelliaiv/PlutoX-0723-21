@@ -1,0 +1,13 @@
+services:
+  - type: web
+    name: plutox-0723-21
+    runtime: docker
+    plan: free
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    branch: develop
+    healthCheckPath: /api/health
+    autoDeployTrigger: commit
+    envVars:
+      - key: ARCHIVE_TIMEOUT_SECONDS
+        value: "30"

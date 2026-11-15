@@ -1,9 +1,12 @@
+import os
 from dataclasses import dataclass
+from pathlib import Path
 
 from astropy import units
 from astropy.coordinates import SkyCoord
 from fastapi import FastAPI, HTTPException, Query, Request
 from fastapi.responses import JSONResponse
+from fastapi.staticfiles import StaticFiles
 
 from app import frame_cache, spherex_archive
 from app.coordinates import CoordinateError, parse_declination, parse_right_ascension
@@ -138,3 +141,13 @@ def _cache_key(
         return frame_cache.key_for_target(target, detector, size)
     position = target_position_at(target_description, SURVEY_MIDPOINT_TIME)
     return frame_cache.key_for_coordinates(position.ra.deg, position.dec.deg, detector, size)
+
+
+def frontend_build_directory() -> Path:
+    """Built frontend served by the API in production; in development Vite serves it instead."""
+    default = Path(__file__).resolve().parents[2] / "frontend" / "dist"
+    return Path(os.environ.get("FRONTEND_BUILD_DIRECTORY", default))
+
+
+if frontend_build_directory().is_dir():
+    app.mount("/", StaticFiles(directory=frontend_build_directory(), html=True), name="frontend")

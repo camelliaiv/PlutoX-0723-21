@@ -35,6 +35,7 @@ def synthetic_cutout(
     offset_pixels: float,
     wavelength_micrometers: float,
     observation_id: str,
+    modified_julian_date: float = 61000.0,
     saturate_star: bool = False,
 ) -> MirrorCutout:
     wcs = synthetic_wcs(star, rotation_degrees, offset_pixels)
@@ -55,7 +56,7 @@ def synthetic_cutout(
         origin_y=0,
         wavelength_micrometers=wavelength_micrometers,
         bandwidth_micrometers=0.02,
-        modified_julian_date_average=61000.0,
+        modified_julian_date_average=modified_julian_date,
         exposure_seconds=112.5,
         detector=5,
         observation_id=observation_id,
@@ -85,6 +86,7 @@ def install_synthetic_cutouts(
     saturate_star: bool = False,
 ) -> None:
     """Replace the mirror read; each image gets its own rotation, offset and wavelength."""
+    image_by_url = {image.mirror_url: image for image in images}
     cutout_by_url = {
         image.mirror_url: (index, image.observation_id) for index, image in enumerate(images)
     }
@@ -99,6 +101,7 @@ def install_synthetic_cutouts(
             offset_pixels=float(index % 3),
             wavelength_micrometers=1.0 + 0.1 * index,
             observation_id=observation_id,
+            modified_julian_date=image_by_url[url].observation_start_modified_julian_date,
             saturate_star=saturate_star,
         )
 

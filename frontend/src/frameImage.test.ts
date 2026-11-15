@@ -27,6 +27,7 @@ function makeFrame(image: (number | null)[][], saturated: (number | null)[][]): 
     variance: image,
     coverage: image.map((row) => row.map(() => 1)),
     saturated_fraction: saturated,
+    predicted_position: { column: 0, row: 0, right_ascension: 0, declination: 0 },
   };
 }
 

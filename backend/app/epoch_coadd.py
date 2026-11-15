@@ -16,6 +16,8 @@ from astropy.wcs import WCS
 from scipy.ndimage import map_coordinates
 
 from app import mirror_cutout
+from app.aperture_photometry import measure_aperture
+from app.frames_models import ExposureMeasurement, PredictedPosition
 from app.mirror_cutout import ByteRangeReader, CenterOutsideImageError, MirrorCutout
 from app.spherex_archive import (
     Collection,
@@ -25,7 +27,7 @@ from app.spherex_archive import (
 )
 from app.target_astrometry import TargetDescription, target_position_at
 
-FRAME_RECIPE_VERSION = 1
+FRAME_RECIPE_VERSION = 2
 PIXEL_SCALE_ARCSECONDS = 6.15
 CUTOUT_MARGIN_PIXELS = 6
 MAXIMUM_WORKER_COUNT = 8
@@ -50,6 +52,7 @@ class ResampledExposure:
     wavelength_micrometers: float
     observation_id: str
     data_release: Collection
+    measurement: ExposureMeasurement
 
 
 @dataclass(frozen=True)
@@ -75,6 +78,7 @@ class EpochFrame:
     variance: np.ndarray
     coverage: np.ndarray
     saturated_fraction: np.ndarray
+    predicted_position: PredictedPosition
 
 
 @dataclass(frozen=True)
@@ -82,6 +86,7 @@ class FrameSet:
     reference_position: SkyCoord
     reference_date: str
     frames: list[EpochFrame]
+    exposures: list[ExposureMeasurement]
     epochs_without_frames: list[int]
 
 
@@ -166,8 +171,45 @@ def saturated_fraction(
     return np.where(contributing_count > 0, saturated_count / safe_count, np.nan)
 
 
+def measure_cutout(
+    cutout: MirrorCutout, position: SkyCoord, data_release: Collection, epoch_number: int
+) -> ExposureMeasurement:
+    """Aperture photometry at the target position, in the native pixels of the cutout."""
+    column, row = (float(value) for value in cutout.celestial_wcs.world_to_pixel(position))
+    photometry = measure_aperture(
+        cutout.image.astype(np.float64) - cutout.zodiacal_light,
+        cutout.variance.astype(np.float64),
+        (cutout.flags & SATURATION_FLAG_MASK) != 0,
+        column,
+        row,
+    )
+    return ExposureMeasurement(
+        observation_id=cutout.observation_id,
+        data_release=data_release,
+        epoch_number=epoch_number,
+        modified_julian_date=cutout.modified_julian_date_average,
+        wavelength_micrometers=cutout.wavelength_micrometers,
+        bandwidth_micrometers=cutout.bandwidth_micrometers,
+        flux_millijansky=photometry.flux_millijansky,
+        flux_error_millijansky=photometry.flux_error_millijansky,
+        saturated_fraction=photometry.saturated_fraction,
+        non_finite_fraction=photometry.non_finite_fraction,
+    )
+
+
+def predicted_position_on_grid(grid: WCS, position: SkyCoord) -> PredictedPosition:
+    """Fractional (column, row) of a sky position on the output grid, with its coordinates."""
+    column, row = (float(value) for value in grid.world_to_pixel(position))
+    return PredictedPosition(
+        column=column,
+        row=row,
+        right_ascension=float(position.ra.deg),
+        declination=float(position.dec.deg),
+    )
+
+
 def resample_cutout(
-    cutout: MirrorCutout, geometry: FrameGeometry, data_release: Collection
+    cutout: MirrorCutout, geometry: FrameGeometry, measurement: ExposureMeasurement
 ) -> ResampledExposure:
     signal = cutout.image.astype(np.float64) - cutout.zodiacal_light
     variance = cutout.variance.astype(np.float64)
@@ -181,7 +223,8 @@ def resample_cutout(
         saturated=resample_nearest((cutout.flags & SATURATION_FLAG_MASK) != 0, coordinates),
         wavelength_micrometers=cutout.wavelength_micrometers,
         observation_id=cutout.observation_id,
-        data_release=data_release,
+        data_release=measurement.data_release,
+        measurement=measurement,
     )
 
 
@@ -196,21 +239,21 @@ def reference_time_of(images: list[ObservationImage]) -> Time:
 def _resample_exposure(
     image: ObservationImage,
     data_release: Collection,
+    epoch_number: int,
     target: TargetDescription,
     geometry: FrameGeometry,
     read_range: ByteRangeReader,
 ) -> ResampledExposure | None:
     observation_time = Time(image.observation_start_modified_julian_date, format="mjd")
     try:
+        position = target_position_at(target, observation_time)
         cutout = mirror_cutout.read_cutout(
-            image.mirror_url,
-            target_position_at(target, observation_time),
-            geometry.cutout_size_pixels,
-            read_range,
+            image.mirror_url, position, geometry.cutout_size_pixels, read_range
         )
     except CenterOutsideImageError:
         return None
-    return resample_cutout(cutout, geometry, data_release)
+    measurement = measure_cutout(cutout, position, data_release, epoch_number)
+    return resample_cutout(cutout, geometry, measurement)
 
 
 def build_epoch_frame(
@@ -219,6 +262,7 @@ def build_epoch_frame(
     exposures: list[ResampledExposure],
     images: list[ObservationImage],
     skipped_exposure_count: int,
+    predicted_position: PredictedPosition,
 ) -> EpochFrame:
     signal = np.stack([exposure.signal for exposure in exposures])
     variance = np.stack([exposure.variance for exposure in exposures])
@@ -244,6 +288,7 @@ def build_epoch_frame(
         variance=coadd.variance,
         coverage=coadd.coverage,
         saturated_fraction=saturated_fraction(saturated, signal, variance),
+        predicted_position=predicted_position,
     )
 
 
@@ -266,6 +311,7 @@ def build_epoch_frames(
 
     frames: list[EpochFrame] = []
     epochs_without_frames: list[int] = []
+    measurements: list[ExposureMeasurement] = []
     with ThreadPoolExecutor(max_workers=MAXIMUM_WORKER_COUNT) as pool:
         for epoch_number, epoch_images in enumerate(split_into_epochs(images), start=1):
             epoch_detector_images = [
@@ -275,9 +321,10 @@ def build_epoch_frames(
                 continue
             resampled = list(
                 pool.map(
-                    lambda image: _resample_exposure(
+                    lambda image, epoch_number=epoch_number: _resample_exposure(
                         image,
                         release_by_mirror_url[image.mirror_url],
+                        epoch_number,
                         target,
                         geometry,
                         read_range,
@@ -293,18 +340,25 @@ def build_epoch_frames(
             if not used:
                 epochs_without_frames.append(epoch_number)
                 continue
+            used_images = [image for image, _ in used]
+            predicted_position = predicted_position_on_grid(
+                geometry.grid, target_position_at(target, reference_time_of(used_images))
+            )
             frames.append(
                 build_epoch_frame(
                     epoch_number,
                     detector,
                     [exposure for _, exposure in used],
-                    [image for image, _ in used],
+                    used_images,
                     len(epoch_detector_images) - len(used),
+                    predicted_position,
                 )
             )
+            measurements.extend(exposure.measurement for _, exposure in used)
     return FrameSet(
         reference_position=reference_position,
         reference_date=reference_time.strftime("%Y-%m-%dT%H:%M:%S"),
         frames=frames,
+        exposures=sorted(measurements, key=lambda item: item.modified_julian_date),
         epochs_without_frames=epochs_without_frames,
     )

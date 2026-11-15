@@ -42,6 +42,11 @@ Options: `--targets <slugs...>`, `--detectors <1..6...>`, `--size <pixels>` (def
 releases answered and at least one frame was built; failed requests are retried up to five times,
 and the exit code is 0 only if every requested combination succeeded.
 
+## Deployment
+The `Dockerfile` builds the frontend with Node and serves it together with the API from one FastAPI process
+(port `$PORT`, default 10000). `render.yaml` describes a Render web service that builds this image from the
+`develop` branch and checks `/api/health`.
+
 ## Tests
 ```bash
 cd backend  && ../.venv/Scripts/python -m pytest && ../.venv/Scripts/python -m ruff check . && ../.venv/Scripts/python -m ruff format --check .

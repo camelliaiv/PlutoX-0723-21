@@ -6,9 +6,11 @@ from app import frame_cache, frame_computation, mirror_cutout, spherex_archive
 from app.frame_cache import FrameCacheKey
 from app.frames_models import (
     DisplayRange,
+    ExposureMeasurement,
     FrameResponse,
     FramesResponse,
     GridDescription,
+    PredictedPosition,
     SkyPosition,
 )
 from app.spherex_archive import Collection
@@ -34,6 +36,21 @@ def synthetic_frames_response() -> FramesResponse:
         variance=[[0.1, None], [0.2, 0.3]],
         coverage=[[2, 0], [2, 2]],
         saturated_fraction=[[0.0, None], [0.0, 0.5]],
+        predicted_position=PredictedPosition(
+            column=0.25, row=0.75, right_ascension=120.0, declination=30.0
+        ),
+    )
+    exposure = ExposureMeasurement(
+        observation_id="synthetic_observation",
+        data_release=Collection.DATA_RELEASE_1,
+        epoch_number=1,
+        modified_julian_date=61000.5,
+        wavelength_micrometers=1.0,
+        bandwidth_micrometers=0.02,
+        flux_millijansky=12.5,
+        flux_error_millijansky=None,
+        saturated_fraction=0.0,
+        non_finite_fraction=0.0,
     )
     return FramesResponse(
         reference_position=position,
@@ -45,6 +62,8 @@ def synthetic_frames_response() -> FramesResponse:
         display_range=DisplayRange(minimum=1.0, maximum=3.0),
         citations=["synthetic citation"],
         frames=[frame],
+        exposures=[exposure],
+        flux_unit="synthetic flux unit",
         notes=[],
         served_from_cache=False,
         computed_at=SYNTHETIC_COMPUTED_AT,
@@ -78,6 +97,8 @@ def test_round_trip_returns_an_equal_response_served_from_cache():
     assert cached.served_from_cache is True
     assert cached.computed_at == SYNTHETIC_COMPUTED_AT
     assert cached.frames == response.frames
+    assert cached.exposures == response.exposures
+    assert cached.flux_unit == response.flux_unit
     assert cached.display_range == response.display_range
 
 
@@ -116,6 +137,17 @@ def test_frames_from_an_older_frame_recipe_are_a_miss(isolated_frame_cache):
     path = isolated_frame_cache / key.file_name
     envelope = json.loads(path.read_text(encoding="utf-8"))
     envelope["frame_recipe_version"] = frame_cache.FRAME_RECIPE_VERSION - 1
+    path.write_text(json.dumps(envelope), encoding="utf-8")
+    assert frame_cache.read_cached_frames(key) is None
+
+
+def test_cache_files_of_the_first_frame_recipe_are_a_miss(isolated_frame_cache):
+    key = frame_cache.key_for_target("barnards_star", 5, 2)
+    frame_cache.write_cached_frames(key, synthetic_frames_response())
+    path = isolated_frame_cache / key.file_name
+    envelope = json.loads(path.read_text(encoding="utf-8"))
+    envelope["frame_recipe_version"] = 1
+    del envelope["response"]["exposures"]
     path.write_text(json.dumps(envelope), encoding="utf-8")
     assert frame_cache.read_cached_frames(key) is None
 

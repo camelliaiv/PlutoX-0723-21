@@ -5,6 +5,7 @@ import numpy as np
 from astropy.coordinates import SkyCoord
 
 from app import frame_cache, spherex_archive
+from app.aperture_photometry import FLUX_UNIT
 from app.epoch_coadd import (
     PIXEL_SCALE_ARCSECONDS,
     SURVEY_MIDPOINT_TIME,
@@ -56,6 +57,7 @@ def _frame_response(frame: EpochFrame) -> FrameResponse:
         variance=_significant_rows(frame.variance),
         coverage=frame.coverage.tolist(),
         saturated_fraction=_significant_rows(frame.saturated_fraction),
+        predicted_position=frame.predicted_position,
     )
 
 
@@ -130,6 +132,8 @@ def compute_live_frames(
         display_range=_display_range(frame_set.frames),
         citations=[spherex_archive.citation_for(release) for release in sorted(used_releases)],
         frames=[_frame_response(frame) for frame in frame_set.frames],
+        exposures=frame_set.exposures,
+        flux_unit=FLUX_UNIT,
         notes=notes,
         served_from_cache=False,
         computed_at=frame_cache.current_timestamp(),

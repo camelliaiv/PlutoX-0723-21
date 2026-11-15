@@ -34,6 +34,26 @@ export interface DisplayRange {
   maximum: number;
 }
 
+export interface PredictedPosition {
+  column: number;
+  row: number;
+  right_ascension: number;
+  declination: number;
+}
+
+export interface ExposureMeasurement {
+  observation_id: string;
+  data_release: string;
+  epoch_number: number;
+  modified_julian_date: number;
+  wavelength_micrometers: number;
+  bandwidth_micrometers: number;
+  flux_millijansky: number | null;
+  flux_error_millijansky: number | null;
+  saturated_fraction: number | null;
+  non_finite_fraction: number | null;
+}
+
 export interface Frame {
   epoch_number: number;
   start_date: string;
@@ -49,6 +69,7 @@ export interface Frame {
   variance: (number | null)[][];
   coverage: number[][];
   saturated_fraction: (number | null)[][];
+  predicted_position: PredictedPosition;
 }
 
 export interface FramesResponse {
@@ -59,6 +80,8 @@ export interface FramesResponse {
   display_range: DisplayRange | null;
   citations: string[];
   frames: Frame[];
+  exposures: ExposureMeasurement[];
+  flux_unit: string;
   notes: string[];
   served_from_cache: boolean;
   computed_at: string;
