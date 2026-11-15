@@ -1,3 +1,4 @@
+import { appendRetryButton } from "./retryButton";
 import { ANNOTATION_COLOR } from "./canvasColors";
 import {
   buildLightCurveModel,
@@ -45,6 +46,7 @@ export interface PixelScaleViewOptions {
     | "selectFrame"
     | "openTarget"
     | "requestAllDetectors"
+    | "retry"
   >;
   onShowInTimeMachine(): void;
 }
@@ -237,6 +239,9 @@ export function createPixelScaleView(options: PixelScaleViewOptions): PixelScale
       statusMessage.className = status?.isError ? "error" : "status";
       statusMessage.setAttribute("role", status?.isError ? "alert" : "status");
       statusMessage.textContent = status?.message ?? WAITING_MESSAGE;
+      if (status?.isError) {
+        appendRetryButton(statusMessage, () => timeMachine.retry());
+      }
     } else if (loadedCount < DETECTOR_COUNT) {
       statusMessage.hidden = false;
       statusMessage.className = "status";

@@ -1,8 +1,12 @@
 # PlutoX 0723+21
 
+![PlutoX 0723+21 banner (AI-generated image)](assets/plutox-banner.png)
+
 **The cosmic time machine for SPHEREx.** A public web tool for NASA Space Apps Challenge 2026
 (*Planet X and SPHEREx*): enter sky coordinates and see how that patch of sky changes across real
 SPHEREx observations — the same "blink" idea Clyde Tombaugh used to discover Pluto in 1930.
+
+**Live app:** https://plutox-0723-21.onrender.com
 
 ## Features
 - Search by RA/Dec (decimal degrees or `08h55m10.831s -07d14m42.53s`) or pick a challenge target

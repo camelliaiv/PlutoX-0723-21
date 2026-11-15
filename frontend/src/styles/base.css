@@ -48,6 +48,12 @@ a {
   white-space: nowrap;
 }
 
+table.visually-hidden {
+  display: block;
+  max-width: 1px;
+  max-height: 1px;
+}
+
 .frame-label {
   font-family: var(--font-mono);
   font-variant-numeric: tabular-nums;

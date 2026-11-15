@@ -324,7 +324,11 @@
           </div>
         </section>
       </main>
+      <div id="sheet-backdrop" class="sheet-backdrop" hidden></div>
       <aside id="sheet-guide" class="sheet glass-panel" aria-label="Guide">
+        <button class="glass-button sheet-back" type="button" data-close-sheet="sheet-guide">
+          <span aria-hidden="true">&larr;</span> Back
+        </button>
         <button
           class="glass-button card-close"
           type="button"
@@ -348,6 +352,9 @@
         <div id="guide-answer" class="guide-answer" aria-live="polite">Pick a question.</div>
       </aside>
       <aside id="sheet-challenge" class="sheet glass-panel" aria-label="Challenge">
+        <button class="glass-button sheet-back" type="button" data-close-sheet="sheet-challenge">
+          <span aria-hidden="true">&larr;</span> Back
+        </button>
         <button
           class="glass-button card-close"
           type="button"
