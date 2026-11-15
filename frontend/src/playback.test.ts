@@ -18,20 +18,37 @@ describe("stepFrameIndex", () => {
 });
 
 describe("intervalMilliseconds", () => {
-  it("converts frames per second to a delay", () => {
-    expect(intervalMilliseconds(1)).toBe(1000);
-    expect(intervalMilliseconds(8)).toBe(125);
+  it("shortens the blink delay as the speed rises", () => {
+    expect(intervalMilliseconds(1)).toBe(1500);
+    expect(intervalMilliseconds(0.5)).toBe(3000);
+    expect(intervalMilliseconds(4)).toBe(375);
   });
 });
 
 describe("keyboardActionFor", () => {
-  it("maps the player keys", () => {
-    expect(keyboardActionFor(" ")).toBe("toggle");
-    expect(keyboardActionFor("ArrowLeft")).toBe("previous");
-    expect(keyboardActionFor("ArrowRight")).toBe("next");
+  it("maps the transport keys", () => {
+    expect(keyboardActionFor(" ")).toEqual({ kind: "toggle" });
+    expect(keyboardActionFor("ArrowLeft")).toEqual({ kind: "previous" });
+    expect(keyboardActionFor("ArrowRight")).toEqual({ kind: "next" });
+  });
+
+  it("maps the number keys to the display modes", () => {
+    expect(keyboardActionFor("1")).toEqual({ kind: "mode", mode: "frame" });
+    expect(keyboardActionFor("2")).toEqual({ kind: "mode", mode: "difference" });
+    expect(keyboardActionFor("3")).toEqual({ kind: "mode", mode: "stack" });
+  });
+
+  it("maps zoom, overlay, colour map and saturation keys in either case", () => {
+    expect(keyboardActionFor("+")).toEqual({ kind: "zoom", direction: 1 });
+    expect(keyboardActionFor("-")).toEqual({ kind: "zoom", direction: -1 });
+    expect(keyboardActionFor("t")).toEqual({ kind: "overlay", overlay: "track" });
+    expect(keyboardActionFor("M")).toEqual({ kind: "overlay", overlay: "marker" });
+    expect(keyboardActionFor("c")).toEqual({ kind: "colorMap" });
+    expect(keyboardActionFor("S")).toEqual({ kind: "saturation" });
   });
 
   it("ignores other keys", () => {
     expect(keyboardActionFor("a")).toBeNull();
+    expect(keyboardActionFor("Enter")).toBeNull();
   });
 });

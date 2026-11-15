@@ -16,6 +16,8 @@ class CatalogueEntry:
     declination_degrees: float
     proper_motion_right_ascension_milliarcseconds_per_year: float
     proper_motion_declination_milliarcseconds_per_year: float
+    distance_parsecs: float | None
+    distance_source: str
 
 
 GAIA_DR3_EPOCH = Time(2016.0, format="jyear")
@@ -29,6 +31,8 @@ CHALLENGE_TARGETS: dict[str, CatalogueEntry] = {
         declination_degrees=4.739420051112412,
         proper_motion_right_ascension_milliarcseconds_per_year=-801.5509783684709,
         proper_motion_declination_milliarcseconds_per_year=10362.394206546573,
+        distance_parsecs=1000 / 546.975939730948,
+        distance_source="Gaia DR3 4472832130942575872",
     ),
     "rw_aurigae": CatalogueEntry(
         name="RW Aurigae",
@@ -38,6 +42,8 @@ CHALLENGE_TARGETS: dict[str, CatalogueEntry] = {
         declination_degrees=30.401204589097233,
         proper_motion_right_ascension_milliarcseconds_per_year=2.6406431770317083,
         proper_motion_declination_milliarcseconds_per_year=-27.397582540455325,
+        distance_parsecs=1000 / 6.406249329219477,
+        distance_source="Gaia DR3 156430822114424576",
     ),
     "r_draconis": CatalogueEntry(
         name="R Draconis",
@@ -47,6 +53,8 @@ CHALLENGE_TARGETS: dict[str, CatalogueEntry] = {
         declination_degrees=66.75500674547219,
         proper_motion_right_ascension_milliarcseconds_per_year=-20.642811719160797,
         proper_motion_declination_milliarcseconds_per_year=6.148818852711324,
+        distance_parsecs=1000 / 1.2509180143740992,
+        distance_source="Gaia DR3 1648328016354496384",
     ),
     "wise_0855_0714": CatalogueEntry(
         name="WISE 0855-0714",
@@ -56,6 +64,8 @@ CHALLENGE_TARGETS: dict[str, CatalogueEntry] = {
         declination_degrees=-7.2442516,
         proper_motion_right_ascension_milliarcseconds_per_year=-8021.2,
         proper_motion_declination_milliarcseconds_per_year=1035.7,
+        distance_parsecs=None,
+        distance_source="not in Gaia DR3",
     ),
     "epsilon_indi_b": CatalogueEntry(
         name="Epsilon Indi B",
@@ -65,6 +75,8 @@ CHALLENGE_TARGETS: dict[str, CatalogueEntry] = {
         declination_degrees=-56.7939530,
         proper_motion_right_ascension_milliarcseconds_per_year=3790.0,
         proper_motion_declination_milliarcseconds_per_year=-2370.0,
+        distance_parsecs=1000 / 274.8431,
+        distance_source="Gaia DR3 6412595290592307840 (Epsilon Indi A, same system)",
     ),
 }
 

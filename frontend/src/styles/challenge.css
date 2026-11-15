@@ -1,0 +1,67 @@
+.challenge-summary {
+  margin: 0 0 var(--space-2);
+  font-size: var(--font-size-small);
+}
+
+.challenge-message {
+  min-height: 1.2em;
+  margin: 0 0 var(--space-2);
+  color: var(--color-electric-blue);
+  font-size: var(--font-size-small);
+  overflow-wrap: anywhere;
+}
+
+.challenge-list {
+  display: grid;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.challenge-item {
+  padding: var(--space-3);
+  border: 1px solid var(--color-navy-600);
+  border-radius: var(--radius-medium);
+  background: #05070f99;
+}
+
+.challenge-requirement {
+  margin: var(--space-1) 0;
+  font-size: 0.95rem;
+}
+
+.sheet .challenge-detail,
+.sheet .challenge-missing {
+  margin: 0 0 var(--space-2);
+  color: var(--color-text);
+  font-size: var(--font-size-small);
+  line-height: 1.45;
+}
+
+.sheet .challenge-missing {
+  color: var(--color-warning);
+}
+
+.challenge-status {
+  display: inline-block;
+  padding: 1px 10px;
+  border: 1px solid var(--color-navy-600);
+  border-radius: 99px;
+  font-size: 0.76rem;
+}
+
+.challenge-status-implemented {
+  border-color: #4ade80aa;
+  color: #8af0ae;
+}
+
+.challenge-status-partial {
+  border-color: #f2cc60aa;
+  color: var(--color-warning);
+}
+
+.challenge-status-notIncluded {
+  border-color: #ff8b80aa;
+  color: var(--color-error);
+}

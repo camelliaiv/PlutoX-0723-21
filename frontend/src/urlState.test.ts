@@ -1,5 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { buildViewQuery, parseDetector, readViewFromUrl, type ViewState } from "./urlState";
+import { DEFAULT_PLAYER_SETTINGS } from "./playerSettings";
+import {
+  buildViewQuery,
+  createEmptyView,
+  parseDetector,
+  readViewFromUrl,
+  type ViewState,
+} from "./urlState";
 
 const emptyCoordinates = { rightAscension: "", declination: "" };
 
@@ -9,6 +16,7 @@ describe("urlState", () => {
       targetSlug: null,
       detector: 3,
       coordinates: { rightAscension: "269.4", declination: "-4.7" },
+      settings: DEFAULT_PLAYER_SETTINGS,
     });
   });
 
@@ -17,6 +25,7 @@ describe("urlState", () => {
       targetSlug: null,
       detector: null,
       coordinates: emptyCoordinates,
+      settings: DEFAULT_PLAYER_SETTINGS,
     });
   });
 
@@ -31,6 +40,7 @@ describe("urlState", () => {
       targetSlug: "wise_0855_0714",
       detector: 5,
       coordinates: { rightAscension: "08h55m10.831s", declination: "-07d14m42.53s" },
+      settings: DEFAULT_PLAYER_SETTINGS,
     };
     const query = buildViewQuery(view);
     expect(query).toBe("?target=wise_0855_0714&detector=5");
@@ -42,6 +52,7 @@ describe("urlState", () => {
       targetSlug: null,
       detector: 1,
       coordinates: { rightAscension: "08h55m10.831s", declination: "-07d14m42.53s" },
+      settings: DEFAULT_PLAYER_SETTINGS,
     };
     expect(readViewFromUrl(buildViewQuery(view))).toEqual(view);
   });
@@ -51,6 +62,7 @@ describe("urlState", () => {
       targetSlug: null,
       detector: null,
       coordinates: emptyCoordinates,
+      settings: DEFAULT_PLAYER_SETTINGS,
     };
     expect(buildViewQuery(emptyView)).toBe("");
   });
@@ -63,5 +75,26 @@ describe("urlState", () => {
     expect(parseDetector("2.5")).toBeNull();
     expect(parseDetector("abc")).toBeNull();
     expect(parseDetector(null)).toBeNull();
+  });
+
+  it("creates an empty view equal to reading an empty query string", () => {
+    expect(createEmptyView()).toEqual(readViewFromUrl(""));
+    expect(buildViewQuery(createEmptyView())).toBe("");
+  });
+});
+
+describe("urlState player settings", () => {
+  it("reads and writes the player settings next to the target", () => {
+    const query = "?target=barnards_star&detector=5&mode=stack&map=gray&zoom=4&track=0";
+    const view = readViewFromUrl(query);
+    expect(view.settings).toMatchObject({ mode: "stack", colorMap: "gray", zoom: 4 });
+    expect(view.settings.showTrack).toBe(false);
+    expect(buildViewQuery(view)).toBe(query);
+  });
+
+  it("keeps old links working and ignores invalid settings", () => {
+    expect(readViewFromUrl("?target=barnards_star&detector=5&mode=sum&zoom=99").settings).toEqual(
+      DEFAULT_PLAYER_SETTINGS,
+    );
   });
 });

@@ -1,156 +1,197 @@
 import "./style.css";
-import { fetchFrames, fetchObservations } from "./api";
-import { DETECTOR_BANDS, describeDetectorBand } from "./detectors";
-import { createElement, requireElement } from "./dom";
-import { createFramesPlayer } from "./framesPlayer";
-import {
-  CHALLENGE_TARGETS,
-  defaultDetectorFor,
-  findChallengeTarget,
-  FREE_COORDINATES_DETECTOR,
-} from "./presets";
-import { renderResults } from "./render";
-import { buildViewQuery, parseDetector, readViewFromUrl, type ViewState } from "./urlState";
+import type { ChallengeAction } from "./challengeItems";
+import { createChallengePanel } from "./challengePanel";
+import { buildShareLink, planChallengeAction } from "./challengePlan";
+import { requireElement } from "./dom";
+import { createFramesCache } from "./framesCache";
+import { createGuideView } from "./guide/guideView";
+import type { GuideAction } from "./guide/guideTypes";
+import { createLogo } from "./logo";
+import { createPixelScaleView } from "./pixelScaleView";
+import { createSheets } from "./sheets";
+import { createSkyView } from "./sky/skyView";
+import { createTimeMachine } from "./timeMachine";
+import { buildViewQuery, readViewFromUrl, type ViewState } from "./urlState";
+import { createViewSwitch } from "./viewSwitch";
+import { DEFAULT_APP_VIEW, readAppViewFromUrl, withAppView, type AppView } from "./viewState";
+import { createWelcome } from "./welcome";
 
-const searchForm = requireElement<HTMLFormElement>("#search-form");
-const rightAscensionInput = requireElement<HTMLInputElement>("#right-ascension-input");
-const declinationInput = requireElement<HTMLInputElement>("#declination-input");
-const searchButton = requireElement<HTMLButtonElement>("#search-button");
-const presetTargets = requireElement<HTMLDivElement>("#preset-targets");
-const detectorSelect = requireElement<HTMLSelectElement>("#detector-select");
-const resultsPanel = requireElement<HTMLDivElement>("#results-panel");
+const logoButton = requireElement<HTMLButtonElement>("#logo-button");
+const appShell = requireElement<HTMLElement>("#app-shell");
 
-const framesPlayer = createFramesPlayer();
-let activeSearch: AbortController | null = null;
-let activeTargetSlug: string | null = null;
+let activeAppView: AppView = readAppViewFromUrl(location.search);
 
-function showObservationsError(message: string): void {
-  const errorMessage = createElement("p", message);
-  errorMessage.className = "error";
-  errorMessage.setAttribute("role", "alert");
-  resultsPanel.replaceChildren(errorMessage);
+function writeUrl(view: ViewState): void {
+  history.replaceState(
+    null,
+    "",
+    location.pathname + withAppView(buildViewQuery(view), activeAppView),
+  );
 }
 
-function currentView(): ViewState {
-  return {
-    targetSlug: activeTargetSlug,
-    detector: parseDetector(detectorSelect.value),
-    coordinates: {
-      rightAscension: rightAscensionInput.value.trim(),
-      declination: declinationInput.value.trim(),
-    },
-  };
-}
+const framesCache = createFramesCache();
+const timeMachine = createTimeMachine({
+  framesCache,
+  onViewChange: writeUrl,
+  onStateChange: () => {
+    pixelScaleView.refresh();
+    followTimeMachineTarget();
+    guideView.refresh();
+  },
+});
+const pixelScaleView = createPixelScaleView({
+  framesCache,
+  timeMachine,
+  onShowInTimeMachine: showTimeMachine,
+});
+const guideView = createGuideView({
+  framesCache,
+  timeMachine,
+  onNavigate: navigateFromGuide,
+});
+let lastTimeMachineTargetSlug: string | null = null;
 
-async function loadObservations(view: ViewState, signal: AbortSignal): Promise<void> {
-  const statusMessage = createElement("p", "Querying IRSA…");
-  statusMessage.className = "status";
-  resultsPanel.replaceChildren(statusMessage);
-  try {
-    resultsPanel.replaceChildren(renderResults(await fetchObservations(view.coordinates, signal)));
-  } catch (error) {
-    if (!signal.aborted) {
-      showObservationsError(error instanceof Error ? error.message : String(error));
-    }
+function followTimeMachineTarget(): void {
+  const targetSlug = timeMachine.currentView().targetSlug;
+  if (targetSlug !== lastTimeMachineTargetSlug) {
+    lastTimeMachineTargetSlug = targetSlug;
+    guideView.setTarget(targetSlug);
   }
 }
 
-async function loadFrames(view: ViewState, signal: AbortSignal): Promise<void> {
-  framesPlayer.showLoading();
-  try {
-    const response = await fetchFrames(
-      {
-        detector: view.detector ?? FREE_COORDINATES_DETECTOR,
-        targetSlug: view.targetSlug,
-        coordinates: view.coordinates,
-      },
-      signal,
-    );
-    framesPlayer.showFrames(response, findChallengeTarget(view.targetSlug)?.notice);
-  } catch (error) {
-    if (!signal.aborted) {
-      framesPlayer.showError(error instanceof Error ? error.message : String(error));
-    }
-  }
-}
+framesCache.subscribe(() => guideView.refresh());
 
-async function search(): Promise<void> {
-  activeSearch?.abort();
-  const currentSearch = new AbortController();
-  activeSearch = currentSearch;
-
-  const view = currentView();
-  history.replaceState(null, "", location.pathname + buildViewQuery(view));
-  searchButton.disabled = true;
-  detectorSelect.disabled = true;
-
-  try {
-    await Promise.all([
-      loadObservations(view, currentSearch.signal),
-      loadFrames(view, currentSearch.signal),
-    ]);
-  } finally {
-    if (activeSearch === currentSearch) {
-      searchButton.disabled = false;
-      detectorSelect.disabled = false;
-      activeSearch = null;
-    }
-  }
-}
-
-function selectTarget(targetSlug: string | null, detector: number): void {
-  activeTargetSlug = targetSlug;
-  detectorSelect.value = String(detector);
-}
-
-for (const band of DETECTOR_BANDS) {
-  const option = createElement("option", describeDetectorBand(band));
-  option.value = String(band.number);
-  detectorSelect.append(option);
-}
-detectorSelect.value = String(FREE_COORDINATES_DETECTOR);
-
-for (const challengeTarget of CHALLENGE_TARGETS) {
-  const targetButton = createElement("button", challengeTarget.name);
-  targetButton.type = "button";
-  targetButton.className = "target-button";
-  targetButton.title = challengeTarget.coordinateSource;
-  targetButton.addEventListener("click", () => {
-    rightAscensionInput.value = challengeTarget.coordinates.rightAscension;
-    declinationInput.value = challengeTarget.coordinates.declination;
-    selectTarget(challengeTarget.slug, challengeTarget.defaultDetector);
-    void search();
-  });
-  presetTargets.append(targetButton);
-}
-
-for (const coordinateInput of [rightAscensionInput, declinationInput]) {
-  coordinateInput.addEventListener("input", () => {
-    if (activeTargetSlug !== null) {
-      selectTarget(null, FREE_COORDINATES_DETECTOR);
-    }
-  });
-}
-
-detectorSelect.addEventListener("change", () => void search());
-
-searchForm.addEventListener("submit", (event) => {
-  event.preventDefault();
-  void search();
+const welcome = createWelcome(appShell);
+const skyView = createSkyView({
+  onOpenInTimeMachine: openInTimeMachine,
+  onTargetSelected: (targetSlug) => guideView.setTarget(targetSlug),
 });
 
-const viewFromUrl = readViewFromUrl(location.search);
-const targetFromUrl = findChallengeTarget(viewFromUrl.targetSlug);
-if (targetFromUrl) {
-  rightAscensionInput.value = targetFromUrl.coordinates.rightAscension;
-  declinationInput.value = targetFromUrl.coordinates.declination;
-  selectTarget(targetFromUrl.slug, viewFromUrl.detector ?? targetFromUrl.defaultDetector);
-  void search();
-} else {
-  rightAscensionInput.value = viewFromUrl.coordinates.rightAscension;
-  declinationInput.value = viewFromUrl.coordinates.declination;
-  selectTarget(null, viewFromUrl.detector ?? defaultDetectorFor(null));
-  if (viewFromUrl.coordinates.rightAscension && viewFromUrl.coordinates.declination) {
-    void search();
+function applyAppView(appView: AppView): void {
+  activeAppView = appView;
+  skyView.setActive(appView === "sky");
+  timeMachine.setActive(appView === "time");
+  pixelScaleView.setActive(appView === "pixel");
+}
+
+const viewSwitch = createViewSwitch((appView) => {
+  applyAppView(appView);
+  writeUrl(timeMachine.currentView());
+});
+
+function showAppView(appView: AppView): void {
+  applyAppView(appView);
+  viewSwitch.select(appView);
+}
+
+function showTimeMachine(): void {
+  showAppView("time");
+  writeUrl(timeMachine.currentView());
+  window.scrollTo(0, 0);
+}
+
+function openInTimeMachine(targetSlug: string): void {
+  timeMachine.openTarget(targetSlug);
+  showAppView("time");
+  writeUrl(timeMachine.currentView());
+  window.scrollTo(0, 0);
+}
+
+function navigateFromGuide(action: GuideAction, targetSlug: string | null): void {
+  switch (action.kind) {
+    case "epoch":
+      timeMachine.selectFrame(timeMachine.currentSelection().detector, action.epochIndex);
+      showTimeMachine();
+      break;
+    case "detector":
+      timeMachine.selectFrame(action.detector, timeMachine.currentSelection().epochIndex);
+      showTimeMachine();
+      break;
+    case "spectrum":
+      showAppView("pixel");
+      writeUrl(timeMachine.currentView());
+      window.scrollTo(0, 0);
+      break;
+    case "timeMachine":
+      if (targetSlug === null) {
+        showTimeMachine();
+      } else {
+        openInTimeMachine(targetSlug);
+      }
+      break;
+    case "catalogue":
+      break;
   }
 }
+
+function playWelcome(): void {
+  skyView.beginIntro();
+  welcome.play((dismissal) => {
+    skyView.endIntro();
+    if (dismissal === "keyboard") {
+      viewSwitch.focusSelectedTab();
+    }
+  });
+}
+
+function restartApp(): void {
+  timeMachine.reset();
+  lastTimeMachineTargetSlug = null;
+  guideView.setTarget(null);
+  history.replaceState(null, "", location.pathname);
+  skyView.restart();
+  showAppView(DEFAULT_APP_VIEW);
+  window.scrollTo(0, 0);
+  playWelcome();
+}
+
+logoButton.append(createLogo("header"));
+logoButton.addEventListener("click", restartApp);
+
+const sheets = createSheets({ onGuideOpen: () => guideView.prepare() });
+
+async function copyShareLink(): Promise<string> {
+  const link = buildShareLink(location.origin + location.pathname, timeMachine.currentView());
+  try {
+    await navigator.clipboard.writeText(link);
+    return `Link copied: ${link}`;
+  } catch {
+    return `Copying was not possible. The link is: ${link}`;
+  }
+}
+
+async function runChallengeAction(action: ChallengeAction): Promise<string> {
+  const plan = planChallengeAction(action);
+  if (plan.copyLink) {
+    return copyShareLink();
+  }
+  if (plan.timeMachineTargetSlug !== null) {
+    timeMachine.openTarget(plan.timeMachineTargetSlug, plan.epochIndex);
+  }
+  if (Object.keys(plan.settingsChange).length > 0) {
+    timeMachine.applySettings(plan.settingsChange);
+  }
+  if (plan.skyTargetSlug !== null) {
+    showAppView("sky");
+    writeUrl(timeMachine.currentView());
+    skyView.flyToTarget(plan.skyTargetSlug);
+  } else if (plan.appView === "pixel") {
+    showAppView("pixel");
+    writeUrl(timeMachine.currentView());
+    window.scrollTo(0, 0);
+  } else {
+    showTimeMachine();
+  }
+  if (plan.focusCoordinates) {
+    requireElement<HTMLInputElement>("#right-ascension-input").focus();
+  }
+  if (plan.closePanel) {
+    sheets.closeAll();
+  }
+  return plan.announcement;
+}
+
+createChallengePanel({ onAction: runChallengeAction });
+timeMachine.restore(readViewFromUrl(location.search));
+showAppView(activeAppView);
+playWelcome();

@@ -1,0 +1,153 @@
+.welcome {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: grid;
+  place-items: center;
+  padding: var(--space-5);
+  background: radial-gradient(ellipse at 50% 50%, #03050b8c 0%, #03050b40 45%, #03050b00 75%);
+  text-align: center;
+  cursor: pointer;
+  transition: opacity var(--welcome-fade-duration, 1000ms) ease;
+}
+
+.welcome-leaving {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.welcome-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-shadow:
+    0 0 18px #000,
+    0 0 40px #000a;
+}
+
+.logo-welcome {
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.logo-welcome .logo-rings {
+  width: 12.5rem;
+  height: 7.5rem;
+  margin-bottom: var(--space-2);
+  filter: drop-shadow(0 0 10px #3da5ff55);
+}
+
+.logo-welcome .wordmark {
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-1);
+}
+
+.logo-welcome .wordmark-name {
+  font-size: clamp(2.2rem, 8vw, 3.8rem);
+  animation: welcome-fade-up 0.7s 0.6s both;
+}
+
+.logo-welcome .wordmark-number {
+  font-size: 0.9rem;
+  animation: welcome-track 1s 0.75s both;
+}
+
+.logo-welcome .ring-blue {
+  animation: welcome-converge-from-left 1s cubic-bezier(0.3, 0.8, 0.2, 1) both;
+}
+
+.logo-welcome .ring-orange {
+  animation: welcome-converge-from-right 1s cubic-bezier(0.3, 0.8, 0.2, 1) both;
+}
+
+.welcome-message {
+  max-width: 34rem;
+  margin: var(--space-5) auto var(--space-2);
+  font-size: clamp(1.05rem, 2.6vw, 1.45rem);
+  font-weight: 500;
+  line-height: 1.4;
+  animation: welcome-fade-up 0.6s 1s both;
+}
+
+.welcome-purpose {
+  max-width: 30rem;
+  margin: 0 auto var(--space-3);
+  color: var(--color-text-muted);
+  font-size: var(--font-size-small);
+  animation: welcome-fade-up 0.6s 1.2s both;
+}
+
+.welcome-skip {
+  margin-top: var(--space-3);
+  background: transparent;
+  color: var(--color-text);
+  border: 1px solid var(--color-navy-600);
+  text-shadow: none;
+  animation: welcome-fade-up 0.5s 1s both;
+}
+
+@keyframes welcome-converge-from-left {
+  from {
+    opacity: 0;
+    transform: translateX(-140px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes welcome-converge-from-right {
+  from {
+    opacity: 0;
+    transform: translateX(140px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes welcome-fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes welcome-track {
+  from {
+    opacity: 0;
+    letter-spacing: 0.9em;
+  }
+  to {
+    opacity: 1;
+    letter-spacing: 0.42em;
+  }
+}
+
+@keyframes welcome-fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .logo-welcome .ring-blue,
+  .logo-welcome .ring-orange,
+  .logo-welcome .wordmark-name,
+  .logo-welcome .wordmark-number,
+  .welcome-message,
+  .welcome-purpose,
+  .welcome-skip {
+    animation: welcome-fade 0.5s both;
+  }
+}

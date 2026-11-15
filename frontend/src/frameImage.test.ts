@@ -1,34 +1,61 @@
 import { describe, expect, it } from "vitest";
 import type { Frame } from "./api";
+import { mapSignedToColor, MISSING_PIXEL_COLOR } from "./colorMaps";
 import {
   buildFramePixels,
-  integerScaleFor,
-  MISSING_PIXEL_COLOR,
   orientNorthUp,
-  scaleBarLengthPixels,
   stretchIntensity,
+  type RenderRequest,
 } from "./frameImage";
+import { buildModeImages } from "./frameModes";
 
 const range = { minimum: 0, maximum: 10 };
 
 function makeFrame(image: (number | null)[][], saturated: (number | null)[][]): Frame {
   return {
-    epoch_number: 1,
-    start_date: "2025-08-15T01:00:00",
-    end_date: "2025-10-01T02:00:00",
-    detector: 5,
-    exposure_count: 3,
-    skipped_exposure_count: 0,
-    wavelength_min_micrometers: 3.9,
-    wavelength_max_micrometers: 4.4,
-    observation_ids: ["a", "b", "c"],
-    data_releases: ["spherex_dr1"],
     image,
-    variance: image,
-    coverage: image.map((row) => row.map(() => 1)),
+    variance: image.map((row) => row.map(() => 1)),
     saturated_fraction: saturated,
-    predicted_position: { column: 0, row: 0, right_ascension: 0, declination: 0 },
+  } as unknown as Frame;
+}
+
+const firstFrame = makeFrame(
+  [
+    [0, null],
+    [10, 5],
+  ],
+  [
+    [0, 0],
+    [0.5, 0],
+  ],
+);
+const secondFrame = makeFrame(
+  [
+    [0, 4],
+    [10, 5],
+  ],
+  [
+    [0, 0],
+    [0, 0],
+  ],
+);
+const frames = [firstFrame, secondFrame];
+const modeImages = buildModeImages(frames);
+
+function request(overrides: Partial<RenderRequest>): RenderRequest {
+  return {
+    mode: "frame",
+    colorMap: "gray",
+    stretch: "linear",
+    showSaturation: false,
+    epochIndex: 0,
+    displayRange: range,
+    ...overrides,
   };
+}
+
+function pixelAt(pixels: Uint8ClampedArray, index: number): number[] {
+  return Array.from(pixels.slice(index * 4, index * 4 + 4));
 }
 
 describe("stretchIntensity", () => {
@@ -43,11 +70,13 @@ describe("stretchIntensity", () => {
   });
 
   it("brightens faint values more than a linear mapping", () => {
-    expect(stretchIntensity(1, range) ?? 0).toBeGreaterThan(0.1);
+    expect(stretchIntensity(1, range, "asinh") ?? 0).toBeGreaterThan(0.1);
+    expect(stretchIntensity(1, range, "linear")).toBeCloseTo(0.1, 12);
   });
 
   it("keeps missing pixels missing", () => {
     expect(stretchIntensity(null, range)).toBeNull();
+    expect(stretchIntensity(Number.NaN, range)).toBeNull();
   });
 
   it("maps everything to 0 when the range has no width", () => {
@@ -67,47 +96,60 @@ describe("orientNorthUp", () => {
   });
 });
 
-describe("scaling", () => {
-  it("uses the largest integer scale that fits about 384 pixels", () => {
-    expect(integerScaleFor(32)).toBe(12);
-    expect(integerScaleFor(40)).toBe(9);
-    expect(integerScaleFor(500)).toBe(1);
-  });
-
-  it("converts an angle to canvas pixels", () => {
-    expect(scaleBarLengthPixels(60, 6, 10)).toBe(100);
-  });
-});
-
 describe("buildFramePixels", () => {
-  const frame = makeFrame(
-    [
-      [0, null],
-      [10, 5],
-    ],
-    [
-      [0, 0],
-      [0.5, 0],
-    ],
-  );
-
   it("draws the northern row first and paints missing pixels in the missing colour", () => {
-    const pixels = Array.from(buildFramePixels(frame, range, false));
-    expect(pixels.slice(0, 4)).toEqual([255, 255, 255, 255]);
-    expect(pixels.slice(8, 12)).toEqual([0, 0, 0, 255]);
-    expect(pixels.slice(12, 16)).toEqual([...MISSING_PIXEL_COLOR]);
+    const pixels = buildFramePixels(frames, modeImages, request({}));
+    expect(pixelAt(pixels, 0)).toEqual([255, 255, 255, 255]);
+    expect(pixelAt(pixels, 2)).toEqual([0, 0, 0, 255]);
+    expect(pixelAt(pixels, 3)).toEqual([...MISSING_PIXEL_COLOR]);
   });
 
-  it("tints saturated pixels only when requested", () => {
-    const plain = Array.from(buildFramePixels(frame, range, false)).slice(0, 4);
-    const tinted = Array.from(buildFramePixels(frame, range, true)).slice(0, 4);
+  it("does not mirror the columns", () => {
+    const pixels = buildFramePixels(frames, modeImages, request({ epochIndex: 1 }));
+    expect(pixelAt(pixels, 1)).toEqual([128, 128, 128, 255]);
+    expect(pixelAt(pixels, 3)).toEqual([102, 102, 102, 255]);
+  });
+
+  it("uses the inferno map when asked", () => {
+    const pixels = buildFramePixels(frames, modeImages, request({ colorMap: "inferno" }));
+    expect(pixelAt(pixels, 0)).toEqual([252, 255, 164, 255]);
+  });
+
+  it("tints saturated pixels only in frame and stack modes and only when requested", () => {
+    const plain = pixelAt(buildFramePixels(frames, modeImages, request({})), 0);
+    const tinted = pixelAt(
+      buildFramePixels(frames, modeImages, request({ showSaturation: true })),
+      0,
+    );
+    const stacked = pixelAt(
+      buildFramePixels(frames, modeImages, request({ mode: "stack", showSaturation: true })),
+      0,
+    );
+    const difference = pixelAt(
+      buildFramePixels(frames, modeImages, request({ mode: "difference", showSaturation: true })),
+      0,
+    );
     expect(plain).toEqual([255, 255, 255, 255]);
     expect(tinted[0]).toBe(255);
     expect(tinted[1]).toBeLessThan(255);
+    expect(stacked[1]).toBeLessThan(255);
+    expect(difference).toEqual(
+      pixelAt(buildFramePixels(frames, modeImages, request({ mode: "difference" })), 0),
+    );
   });
 
-  it("draws every pixel as missing without a display range", () => {
-    const pixels = Array.from(buildFramePixels(frame, null, false));
-    expect(pixels.slice(0, 4)).toEqual([...MISSING_PIXEL_COLOR]);
+  it("draws the first epoch of a difference in the neutral colour and gaps as missing", () => {
+    const pixels = buildFramePixels(frames, modeImages, request({ mode: "difference" }));
+    expect(pixelAt(pixels, 0)).toEqual([...mapSignedToColor(0)]);
+    expect(pixelAt(pixels, 3)).toEqual([...MISSING_PIXEL_COLOR]);
+  });
+
+  it("draws every frame pixel as missing without a display range", () => {
+    const pixels = buildFramePixels(frames, modeImages, request({ displayRange: null }));
+    expect(pixelAt(pixels, 0)).toEqual([...MISSING_PIXEL_COLOR]);
+  });
+
+  it("returns no pixels for an epoch that does not exist", () => {
+    expect(buildFramePixels(frames, modeImages, request({ epochIndex: 9 }))).toHaveLength(0);
   });
 });

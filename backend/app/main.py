@@ -33,6 +33,7 @@ from app.target_astrometry import (
     TargetDescription,
     target_position_at,
 )
+from app.target_facts import TargetsResponse, describe_challenge_targets
 
 
 @dataclass(frozen=True)
@@ -62,6 +63,11 @@ async def handle_archive_error(_request: Request, error: ArchiveError) -> JSONRe
 @app.get("/api/health")
 def health() -> HealthResponse:
     return HealthResponse(status="ok")
+
+
+@app.get("/api/targets")
+def targets() -> TargetsResponse:
+    return describe_challenge_targets()
 
 
 @app.get("/api/observations")

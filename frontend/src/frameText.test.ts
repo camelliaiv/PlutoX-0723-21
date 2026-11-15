@@ -3,8 +3,10 @@ import type { Frame, FramesResponse } from "./api";
 import {
   describeSaturation,
   formatFrameLabel,
-  formatFrameProvenance,
+  formatFramePlayerLabel,
   formatFrameSource,
+  formatPlayerBadge,
+  countSaturatedPixels,
   hasSaturatedPixels,
 } from "./frameText";
 
@@ -37,12 +39,6 @@ describe("frameText", () => {
   it("omits skipped exposures when there are none", () => {
     const label = formatFrameLabel({ ...frame, skipped_exposure_count: 0, exposure_count: 1 });
     expect(label).toContain("1 exposure used ·");
-  });
-
-  it("describes the observations of a frame", () => {
-    expect(formatFrameProvenance(frame)).toBe(
-      "This frame combines 3 observations from SPHEREx Data Release 1, Quick Release 3.",
-    );
   });
 
   it("detects saturated pixels, ignoring missing values", () => {
@@ -80,5 +76,38 @@ describe("frameText", () => {
         "Precomputed frames, computed 2026-11-15.",
       );
     });
+  });
+});
+
+describe("countSaturatedPixels", () => {
+  it("counts pixels saturated in at least half of the exposures", () => {
+    const saturatedFrame = { ...frame, saturated_fraction: [[0.5, 0.49, null, 1]] };
+    expect(countSaturatedPixels(saturatedFrame)).toBe(2);
+  });
+});
+
+describe("formatPlayerBadge", () => {
+  it("names the detector and the epoch with its dates", () => {
+    expect(formatPlayerBadge(frame, "frame", 1, 3)).toBe("D5 · Epoch 2 · 11 Mar – 5 May 2026");
+  });
+
+  it("describes difference and stack modes", () => {
+    expect(formatPlayerBadge(frame, "difference", 2, 3)).toBe("D5 · Epoch 3 minus epoch 1");
+    expect(formatPlayerBadge(frame, "stack", 0, 3)).toBe("D5 · Stack of 3 epochs");
+  });
+});
+
+describe("formatFramePlayerLabel", () => {
+  it("combines the frame label, the mode and the predicted position", () => {
+    const label = formatFramePlayerLabel(
+      { ...frame, predicted_position: { ...frame.predicted_position, column: 3.14, row: 20 } },
+      "stack",
+      1,
+      3,
+    );
+    expect(label).toContain("Real SPHEREx image, epoch 2 of 3.");
+    expect(label).toContain(formatFrameLabel(frame));
+    expect(label).toContain("Mode: Stack. Predicted position at column 3.1, row 20.0.");
+    expect(label.endsWith("North up, east left.")).toBe(true);
   });
 });

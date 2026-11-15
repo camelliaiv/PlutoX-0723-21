@@ -1,25 +1,8 @@
 import type { SkyCoordinatesInput } from "./urlState";
 
-export interface Epoch {
-  number: number;
-  start_date: string;
-  end_date: string;
-  image_count: number;
-  image_count_by_band: Record<string, number>;
-}
-
 export interface SkyPosition {
   right_ascension: number;
   declination: number;
-}
-
-export interface ObservationsResponse {
-  target: SkyPosition;
-  collection: string;
-  citation: string;
-  search_url: string;
-  image_count: number;
-  epochs: Epoch[];
 }
 
 export interface GridDescription {
@@ -132,17 +115,6 @@ async function fetchJson<ResponseBody>(url: string, signal: AbortSignal): Promis
   return (await response.json()) as ResponseBody;
 }
 
-export function fetchObservations(
-  coordinates: SkyCoordinatesInput,
-  signal: AbortSignal,
-): Promise<ObservationsResponse> {
-  const query = new URLSearchParams({
-    ra: coordinates.rightAscension,
-    dec: coordinates.declination,
-  });
-  return fetchJson<ObservationsResponse>(`/api/observations?${query}`, signal);
-}
-
 export function buildFramesQuery(request: FramesRequest): string {
   const query = new URLSearchParams({ detector: String(request.detector) });
   if (request.targetSlug) {
@@ -156,4 +128,26 @@ export function buildFramesQuery(request: FramesRequest): string {
 
 export function fetchFrames(request: FramesRequest, signal: AbortSignal): Promise<FramesResponse> {
   return fetchJson<FramesResponse>(`/api/frames?${buildFramesQuery(request)}`, signal);
+}
+
+export interface TargetFacts {
+  slug: string;
+  name: string;
+  catalogue_source_id: string;
+  reference_epoch: string;
+  right_ascension_degrees: number;
+  declination_degrees: number;
+  proper_motion_right_ascension_milliarcseconds_per_year: number;
+  proper_motion_declination_milliarcseconds_per_year: number;
+  total_proper_motion_arcseconds_per_year: number;
+  distance_parsecs: number | null;
+  distance_source: string;
+}
+
+export interface TargetsResponse {
+  targets: TargetFacts[];
+}
+
+export function fetchTargets(signal: AbortSignal): Promise<TargetsResponse> {
+  return fetchJson<TargetsResponse>("/api/targets", signal);
 }
