@@ -26,6 +26,22 @@ npm ci
 npm run dev                                                # http://localhost:5173
 ```
 
+## Frame cache
+Frames of the five challenge targets are precomputed and committed in `backend/frame_cache/`, so
+those targets open instantly and do not depend on IRSA being available; the page states when frames
+come from the cache, when they were computed and from which data releases. Any other coordinates
+are computed live. To regenerate the cache, for example after a new SPHEREx release:
+
+```bash
+cd backend
+../.venv/Scripts/python -m app.precompute_frames --force
+```
+
+Options: `--targets <slugs...>`, `--detectors <1..6...>`, `--size <pixels>` (default 32) and
+`--force` (recompute even when a valid cache file exists). A combination is cached only when both
+releases answered and at least one frame was built; failed requests are retried up to five times,
+and the exit code is 0 only if every requested combination succeeded.
+
 ## Tests
 ```bash
 cd backend  && ../.venv/Scripts/python -m pytest && ../.venv/Scripts/python -m ruff check . && ../.venv/Scripts/python -m ruff format --check .

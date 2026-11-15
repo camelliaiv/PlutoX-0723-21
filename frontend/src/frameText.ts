@@ -7,8 +7,12 @@ const RELEASE_TITLES: Record<string, string> = {
   spherex_qr3: "Quick Release 3",
 };
 
+function describeRelease(release: string): string {
+  return RELEASE_TITLES[release] ?? release;
+}
+
 export function describeReleases(releases: string[]): string {
-  return releases.map((release) => RELEASE_TITLES[release] ?? release).join(", ");
+  return releases.map(describeRelease).join(", ");
 }
 
 function describeExposures(frame: Frame): string {
@@ -39,6 +43,16 @@ export function formatFrameProvenance(frame: Frame): string {
   const observationWord = count === 1 ? "observation" : "observations";
   const releases = describeReleases(frame.data_releases);
   return `This frame combines ${count} ${observationWord} from SPHEREx ${releases}.`;
+}
+
+export function formatFrameSource(response: FramesResponse): string {
+  const releases = [...new Set(response.frames.flatMap((frame) => frame.data_releases))].sort();
+  const sourceLabel =
+    releases.length > 0 ? ` from SPHEREx ${releases.map(describeRelease).join(" + ")}` : "";
+  const computed = formatDate(response.computed_at);
+  return response.served_from_cache
+    ? `Precomputed frames, computed ${computed}${sourceLabel}.`
+    : `Computed live on ${computed}${sourceLabel}.`;
 }
 
 export function formatReferencePosition(response: FramesResponse): string {

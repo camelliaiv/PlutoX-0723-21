@@ -5,6 +5,7 @@ import {
   describeSaturation,
   formatFrameLabel,
   formatFrameProvenance,
+  formatFrameSource,
   formatReferencePosition,
 } from "./frameText";
 import { intervalMilliseconds, keyboardActionFor, stepFrameIndex } from "./playback";
@@ -28,6 +29,7 @@ export function createFramesPlayer(): FramesPlayer {
   const frameSlider = requireElement<HTMLInputElement>("#frame-slider");
   const saturationToggle = requireElement<HTMLInputElement>("#saturation-toggle");
   const provenance = requireElement<HTMLParagraphElement>("#frame-provenance");
+  const source = requireElement<HTMLParagraphElement>("#frame-source");
   const reference = requireElement<HTMLParagraphElement>("#frame-reference");
   const citations = requireElement<HTMLDivElement>("#frame-citations");
 
@@ -166,6 +168,7 @@ export function createFramesPlayer(): FramesPlayer {
       }
       currentResponse = response;
       frameSlider.max = String(response.frames.length - 1);
+      source.textContent = formatFrameSource(response);
       reference.textContent = formatReferencePosition(response);
       citations.replaceChildren(
         ...response.citations.map((citation) => createElement("p", `${citation}.`)),

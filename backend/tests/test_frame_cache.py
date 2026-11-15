@@ -2,7 +2,7 @@ import json
 
 import pytest
 
-from app import frame_cache, main, mirror_cutout, spherex_archive
+from app import frame_cache, frame_computation, mirror_cutout, spherex_archive
 from app.frame_cache import FrameCacheKey
 from app.frames_models import (
     DisplayRange,
@@ -147,7 +147,7 @@ def test_api_serves_cached_frames_without_reading_the_archive(client, monkeypatc
 
     monkeypatch.setattr(spherex_archive, "search_releases", fail)
     monkeypatch.setattr(mirror_cutout, "http_range_reader", fail)
-    monkeypatch.setattr(main, "build_epoch_frames", fail)
+    monkeypatch.setattr(frame_computation, "build_epoch_frames", fail)
     response = client.get(
         "/api/frames", params={"detector": 5, "size": 8, "target": "barnards_star"}
     )

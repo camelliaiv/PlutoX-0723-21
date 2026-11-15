@@ -4,6 +4,7 @@ Uses the IVOA Simple Image Access v2 (SIA2) service.
 """
 
 import io
+import os
 from collections import Counter
 from dataclasses import dataclass
 from enum import StrEnum
@@ -18,6 +19,7 @@ from app.errors import ArchiveError
 from app.mirror_cutout import mirror_url
 
 SEARCH_SERVICE_URL = "https://irsa.ipac.caltech.edu/SIA"
+ARCHIVE_TIMEOUT_SECONDS = float(os.environ.get("ARCHIVE_TIMEOUT_SECONDS", "30"))
 EPOCH_GAP_DAYS = 30.0
 METERS_TO_MICROMETERS = 1e6
 

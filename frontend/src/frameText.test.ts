@@ -1,9 +1,10 @@
 import { describe, expect, it } from "vitest";
-import type { Frame } from "./api";
+import type { Frame, FramesResponse } from "./api";
 import {
   describeSaturation,
   formatFrameLabel,
   formatFrameProvenance,
+  formatFrameSource,
   hasSaturatedPixels,
 } from "./frameText";
 
@@ -52,5 +53,31 @@ describe("frameText", () => {
     expect(describeSaturation([frame])).toBeNull();
     const notice = describeSaturation([frame, { ...frame, saturated_fraction: [[1, 0]] }]);
     expect(notice).toContain("Some pixels are saturated");
+  });
+
+  describe("formatFrameSource", () => {
+    const response = {
+      frames: [frame, { ...frame, data_releases: ["spherex_dr1"] }],
+      served_from_cache: true,
+      computed_at: "2026-11-15T10:20:30+00:00",
+    } as FramesResponse;
+
+    it("states that cached frames are precomputed, with date and releases", () => {
+      expect(formatFrameSource(response)).toBe(
+        "Precomputed frames, computed 2026-11-15 from SPHEREx Data Release 1 + Quick Release 3.",
+      );
+    });
+
+    it("states that other frames were computed live", () => {
+      expect(formatFrameSource({ ...response, served_from_cache: false })).toBe(
+        "Computed live on 2026-11-15 from SPHEREx Data Release 1 + Quick Release 3.",
+      );
+    });
+
+    it("omits the releases when there are no frames", () => {
+      expect(formatFrameSource({ ...response, frames: [] })).toBe(
+        "Precomputed frames, computed 2026-11-15.",
+      );
+    });
   });
 });
